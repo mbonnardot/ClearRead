@@ -1,3 +1,4 @@
+import type { TtsRate } from '../shared/types';
 import type { OverlayController } from './overlayHost';
 import { createWordRange, extractSentenceSegments, type SentenceSegment } from './textMapper';
 
@@ -5,6 +6,7 @@ export interface TtsController {
   speakBlock(block: HTMLElement): void;
   togglePause(): void;
   stop(): void;
+  setRate(rate: TtsRate): void;
 }
 
 const SENTENCE_HIGHLIGHT = 'clearread-sentence';
@@ -35,6 +37,7 @@ export function createTtsController(
   let sessionId = 0;
   let paused = false;
   let active = false;
+  let rate: TtsRate = 1;
 
   const resetPlayback = () => {
     sessionId += 1;
@@ -63,7 +66,7 @@ export function createTtsController(
 
     const segment = segments[index];
     const utterance = new SpeechSynthesisUtterance(segment.text);
-    utterance.rate = 0.95;
+    utterance.rate = rate;
 
     utterance.onstart = () => {
       if (currentSession !== sessionId) return;
@@ -120,6 +123,10 @@ export function createTtsController(
       }
     },
 
-    stop
+    stop,
+
+    setRate(newRate: TtsRate) {
+      rate = newRate;
+    }
   };
 }

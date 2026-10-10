@@ -28,6 +28,12 @@ describe('content textMapper', () => {
     const boldWordRange = createWordRange(segments[0], 6);
     expect(boldWordRange?.toString()).toBe('bold');
     expect(p.innerHTML).toBe(originalHtml);
+
+    // Multi-node Bionic split word (<strong class="cr-bionic">Im</strong>mersive) resolves as full word Range
+    const bionicP = document.createElement('p');
+    bionicP.innerHTML = '<span data-cr-enriched="true"><strong class="cr-bionic">Im</strong>mersive</span> reader.';
+    const bionicSegs = extractSentenceSegments(bionicP, 'en');
+    expect(createWordRange(bionicSegs[0], 0)?.toString()).toBe('Immersive');
   });
 
   it('enforces ttsMode click vs alt-click rules and skips links on plain click', () => {

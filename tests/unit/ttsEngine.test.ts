@@ -76,11 +76,14 @@ describe('content ttsEngine, content orchestrator & background worker', () => {
     tts.togglePause();
     expect(window.speechSynthesis.pause).not.toHaveBeenCalled();
 
-    const p = document.getElementById('target')!;
+    const p = document.getElementById('target');
+    if (!p) throw new Error('missing target');
+    tts.setRate(1.25);
     tts.speakBlock(p);
 
     expect(statuses[0]).toBe('speaking');
     expect(utterances[0].text).toBe('Hello world.');
+    expect(utterances[0].rate).toBe(1.25);
     expect(highlightMap.get('clearread-sentence')?.ranges[0].toString()).toBe('Hello world.');
 
     // Non-word boundary is ignored
