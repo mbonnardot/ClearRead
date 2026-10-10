@@ -39,11 +39,11 @@ function buildTintCss(tintColor: ClearReadSettings['tintColor']): string {
   }
 
   return `
-    html, body {
+    html, body, main, article, section, div:not([id^="clearread"]) {
       background-color: ${tintColor} !important;
       color: #1F1F1F !important;
     }
-    p, li, dd, dt, blockquote, h1, h2, h3, h4, h5, h6 {
+    p, li, dd, dt, blockquote, h1, h2, h3, h4, h5, h6, td, th, span {
       color: #1F1F1F !important;
     }
     a {
