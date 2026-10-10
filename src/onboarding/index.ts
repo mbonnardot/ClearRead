@@ -6,13 +6,13 @@ export function initOnboarding(doc: Document = document): void {
   const previewBox = doc.getElementById('previewBox') as HTMLElement | null;
   const saveBtn = doc.getElementById('saveBtn') as HTMLButtonElement | null;
   const saveStatus = doc.getElementById('saveStatus') as HTMLElement | null;
-  const cards = doc.querySelectorAll<HTMLElement>('.m3-card');
+  const cards = doc.querySelectorAll<HTMLButtonElement>('.m3-card');
 
   if (!previewBox || !saveBtn || cards.length === 0) return;
 
   let currentProfile: ProfileKey = 'mild';
 
-  const updatePreview = (profileKey: ProfileKey) => {
+  const updatePreview = (profileKey: ProfileKey): void => {
     const config = PROFILES[profileKey];
     previewBox.style.fontFamily = `'${config.font}', sans-serif`;
     previewBox.style.lineHeight = config.lineHeight;
@@ -20,19 +20,19 @@ export function initOnboarding(doc: Document = document): void {
     previewBox.style.wordSpacing = config.wordSpacing;
     previewBox.style.backgroundColor = config.tintColor;
     previewBox.style.border = config.rulerEnabled
-      ? '2px dashed #D97706'
+      ? '2px dashed #0B57D0'
       : '1px solid var(--md-sys-color-outline-variant)';
   };
 
   updatePreview(currentProfile);
 
-  const selectCard = (card: HTMLElement) => {
+  const selectCard = (card: HTMLButtonElement): void => {
     cards.forEach((c) => {
       c.classList.remove('selected');
-      c.setAttribute('aria-checked', 'false');
+      c.setAttribute('aria-pressed', 'false');
     });
     card.classList.add('selected');
-    card.setAttribute('aria-checked', 'true');
+    card.setAttribute('aria-pressed', 'true');
     const key = card.dataset.profile as ProfileKey | undefined;
     if (key && key in PROFILES) {
       currentProfile = key;
@@ -42,12 +42,6 @@ export function initOnboarding(doc: Document = document): void {
 
   cards.forEach((card) => {
     card.addEventListener('click', () => selectCard(card));
-    card.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        selectCard(card);
-      }
-    });
   });
 
   saveBtn.addEventListener('click', () => {

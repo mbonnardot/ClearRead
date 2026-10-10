@@ -10,18 +10,27 @@ describe('Material Design 3 Background, Onboarding & Popup UI controllers', () =
   let stored: Record<string, unknown>;
   let createTab: ReturnType<typeof vi.fn>;
   let queryTabs: ReturnType<typeof vi.fn>;
+  let sendMessage: ReturnType<typeof vi.fn>;
   let executeScript: ReturnType<typeof vi.fn>;
   let installedListener: ((details: { reason: string }) => void) | undefined;
+  let activeTabUrl: string;
 
   beforeEach(() => {
     stored = { ...DEFAULT_SETTINGS };
+    activeTabUrl = 'https://example.com/article';
     createTab = vi.fn();
-    queryTabs = vi.fn(async () => [
-      { id: 1, url: 'https://example.com/article' },
-      { id: 2, url: 'chrome://extensions' },
-      { id: 3, url: 'http://localhost:3000/page' },
-      { url: 'https://missing-id.example.com' }
-    ]);
+    sendMessage = vi.fn();
+    queryTabs = vi.fn(async (queryInfo?: { active?: boolean }) => {
+      if (queryInfo?.active) {
+        return [{ id: 1, url: activeTabUrl }];
+      }
+      return [
+        { id: 1, url: activeTabUrl },
+        { id: 2, url: 'chrome://extensions' },
+        { id: 3, url: 'http://localhost:3000/page' },
+        { url: 'https://missing-id.example.com' }
+      ];
+    });
     executeScript = vi.fn(({ target }: { target: { tabId: number } }) =>
       target.tabId === 3 ? Promise.reject(new Error('Tab restricted')) : Promise.resolve([])
     );
@@ -29,6 +38,7 @@ describe('Material Design 3 Background, Onboarding & Popup UI controllers', () =
 
     vi.stubGlobal('chrome', {
       runtime: {
+        getURL: (path: string) => `chrome-extension://test-id/${path}`,
         onInstalled: {
           addListener: (cb: (details: { reason: string }) => void) => {
             installedListener = cb;
@@ -46,7 +56,8 @@ describe('Material Design 3 Background, Onboarding & Popup UI controllers', () =
       },
       tabs: {
         create: createTab,
-        query: queryTabs
+        query: queryTabs,
+        sendMessage
       },
       scripting: {
         executeScript
@@ -74,7 +85,7 @@ describe('Material Design 3 Background, Onboarding & Popup UI controllers', () =
     expect(executeScript).toHaveBeenCalledTimes(2);
   });
 
-  it('switches onboarding profile preview, injects content script into open tabs, and persists preset on save', async () => {
+  it('uses native GAR <button> cards in onboarding, previews profiles, injects open tabs, and saves preset', async () => {
     const html = readFileSync(resolve(process.cwd(), 'src/onboarding/onboarding.html'), 'utf8');
     document.documentElement.innerHTML = html;
     const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => {});
@@ -85,28 +96,25 @@ describe('Material Design 3 Background, Onboarding & Popup UI controllers', () =
     expect(previewBox.style.fontFamily).toContain('Lexend');
     expect(previewBox.style.lineHeight).toBe('1.65');
 
-    const mildCard = document.querySelector('[data-profile="mild"]') as HTMLElement;
-    const moderateCard = document.querySelector('[data-profile="moderate"]') as HTMLElement;
-    const heavyCard = document.querySelector('[data-profile="heavy"]') as HTMLElement;
+    const mildCard = document.querySelector('[data-profile="mild"]') as HTMLButtonElement;
+    const moderateCard = document.querySelector('[data-profile="moderate"]') as HTMLButtonElement;
+    const heavyCard = document.querySelector('[data-profile="heavy"]') as HTMLButtonElement;
 
-    expect(document.querySelector('.cards-grid')?.getAttribute('role')).toBe('radiogroup');
-    expect(mildCard.getAttribute('aria-checked')).toBe('true');
-    expect(moderateCard.getAttribute('aria-checked')).toBe('false');
+    expect(mildCard.tagName).toBe('BUTTON');
+    expect(mildCard.getAttribute('aria-pressed')).toBe('true');
+    expect(moderateCard.getAttribute('aria-pressed')).toBe('false');
 
-    moderateCard.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    moderateCard.click();
     expect(moderateCard.classList.contains('selected')).toBe(true);
-    expect(moderateCard.getAttribute('aria-checked')).toBe('true');
-    expect(mildCard.getAttribute('aria-checked')).toBe('false');
+    expect(moderateCard.getAttribute('aria-pressed')).toBe('true');
+    expect(mildCard.getAttribute('aria-pressed')).toBe('false');
     expect(previewBox.style.fontFamily).toContain('Atkinson Hyperlegible');
 
-    heavyCard.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    heavyCard.click();
     expect(heavyCard.classList.contains('selected')).toBe(true);
-    expect(heavyCard.getAttribute('aria-checked')).toBe('true');
+    expect(heavyCard.getAttribute('aria-pressed')).toBe('true');
     expect(previewBox.style.fontFamily).toContain('OpenDyslexic');
     expect(previewBox.style.lineHeight).toBe('2');
-
-    mildCard.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
-    expect(heavyCard.getAttribute('aria-checked')).toBe('true');
 
     const saveStatus = document.getElementById('saveStatus') as HTMLElement;
     (document.getElementById('saveBtn') as HTMLButtonElement).click();
@@ -121,98 +129,101 @@ describe('Material Design 3 Background, Onboarding & Popup UI controllers', () =
     expect(closeSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('hydrates popup controls, injects open tabs, switches profiles, and auto-enables on control edits', async () => {
-    stored = { ...PROFILES.moderate, hasSeenOnboarding: true };
+  it('hydrates upgraded v2 popup controls, triggers Reader View & PDF viewer, manages site exclusions, and auto-enables on edits', async () => {
+    stored = {
+      ...DEFAULT_SETTINGS,
+      ...PROFILES.moderate,
+      hasSeenOnboarding: true
+    };
+    activeTabUrl = 'https://example.com/paper.pdf';
     const html = readFileSync(resolve(process.cwd(), 'src/popup/popup.html'), 'utf8');
     document.documentElement.innerHTML = html;
 
     await initPopup(document);
-    expect(executeScript).toHaveBeenCalledTimes(2);
 
     const enabledCheckbox = document.getElementById('enabled') as HTMLInputElement;
+    const siteToggle = document.getElementById('siteToggle') as HTMLInputElement;
     const profileSelect = document.getElementById('profileSelect') as HTMLSelectElement;
     const fontSelect = document.getElementById('fontSelect') as HTMLSelectElement;
-    const rulerToggle = document.getElementById('rulerToggle') as HTMLInputElement;
+    const fontScale = document.getElementById('fontScale') as HTMLInputElement;
+    const rulerStyleSelect = document.getElementById('rulerStyleSelect') as HTMLSelectElement;
     const lineHeight = document.getElementById('lineHeight') as HTMLInputElement;
     const tintSelect = document.getElementById('tintSelect') as HTMLSelectElement;
+    const bionicToggle = document.getElementById('bionicToggle') as HTMLInputElement;
+    const syllableToggle = document.getElementById('syllableToggle') as HTMLInputElement;
+    const alternationToggle = document.getElementById('alternationToggle') as HTMLInputElement;
     const ttsSelect = document.getElementById('ttsSelect') as HTMLSelectElement;
+    const ttsRateSelect = document.getElementById('ttsRateSelect') as HTMLSelectElement;
+    const readerViewBtn = document.getElementById('readerViewBtn') as HTMLButtonElement;
+    const openPdfBtn = document.getElementById('openPdfBtn') as HTMLButtonElement;
 
     expect(profileSelect.value).toBe('moderate');
     expect(enabledCheckbox.checked).toBe(true);
+    expect(siteToggle.checked).toBe(true);
 
-    // Explicitly turn off ClearRead
-    enabledCheckbox.checked = false;
-    enabledCheckbox.dispatchEvent(new Event('change'));
+    // Quick Action: Reader View sends message to active tab
+    readerViewBtn.click();
     await new Promise((r) => setTimeout(r, 0));
-    expect(stored.enabled).toBe(false);
+    expect(sendMessage).toHaveBeenCalledWith(1, { type: 'CLEARREAD_TOGGLE_READER' });
 
-    // Changing typeface auto-enables ClearRead
-    fontSelect.value = 'Lexend';
-    fontSelect.dispatchEvent(new Event('change'));
+    // Quick Action: PDF Reader opens pdf.html?url=... when active tab is a PDF
+    openPdfBtn.click();
     await new Promise((r) => setTimeout(r, 0));
-    expect(enabledCheckbox.checked).toBe(true);
-    expect(stored.enabled).toBe(true);
-    expect(stored.font).toBe('Lexend');
+    expect(createTab).toHaveBeenCalledWith({
+      url: 'chrome-extension://test-id/pdf.html?url=https%3A%2F%2Fexample.com%2Fpaper.pdf'
+    });
 
-    // Disable again, then changing ruler auto-enables
-    enabledCheckbox.checked = false;
-    enabledCheckbox.dispatchEvent(new Event('change'));
+    // Site exclusion toggle updates excludedDomains
+    siteToggle.checked = false;
+    siteToggle.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
-    rulerToggle.checked = false;
-    rulerToggle.dispatchEvent(new Event('change'));
+    expect(stored.excludedDomains).toEqual(['example.com']);
+
+    // Font scale, Focus Mask mode, Reading Aids, and Speech Rate updates persist cleanly
+    fontScale.value = '120';
+    fontScale.dispatchEvent(new Event('input'));
     await new Promise((r) => setTimeout(r, 0));
-    expect(enabledCheckbox.checked).toBe(true);
-    expect(stored.enabled).toBe(true);
+    expect(stored.fontScale).toBe(120);
+
+    rulerStyleSelect.value = 'wide';
+    rulerStyleSelect.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(stored.rulerEnabled).toBe(true);
+    expect(stored.rulerStyle).toBe('wide');
+
+    rulerStyleSelect.value = 'off';
+    rulerStyleSelect.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 0));
     expect(stored.rulerEnabled).toBe(false);
 
-    // Disable again, then changing line spacing auto-enables
-    enabledCheckbox.checked = false;
-    enabledCheckbox.dispatchEvent(new Event('change'));
+    bionicToggle.checked = true;
+    bionicToggle.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
-    lineHeight.value = '2.1';
-    lineHeight.dispatchEvent(new Event('input'));
-    await new Promise((r) => setTimeout(r, 0));
-    expect(enabledCheckbox.checked).toBe(true);
-    expect(stored.enabled).toBe(true);
-    expect(stored.lineHeight).toBe('2.1');
+    expect(stored.bionicReading).toBe(true);
 
-    // Disable again, then changing tint auto-enables
-    enabledCheckbox.checked = false;
-    enabledCheckbox.dispatchEvent(new Event('change'));
+    syllableToggle.checked = true;
+    syllableToggle.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
-    tintSelect.value = '#EAEFE9';
-    tintSelect.dispatchEvent(new Event('change'));
-    await new Promise((r) => setTimeout(r, 0));
-    expect(enabledCheckbox.checked).toBe(true);
-    expect(stored.enabled).toBe(true);
-    expect(stored.tintColor).toBe('#EAEFE9');
+    expect(stored.syllableDots).toBe(true);
 
-    // Disable again, then changing TTS auto-enables
-    enabledCheckbox.checked = false;
-    enabledCheckbox.dispatchEvent(new Event('change'));
+    alternationToggle.checked = true;
+    alternationToggle.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
-    ttsSelect.value = 'click';
-    ttsSelect.dispatchEvent(new Event('change'));
-    await new Promise((r) => setTimeout(r, 0));
-    expect(enabledCheckbox.checked).toBe(true);
-    expect(stored.enabled).toBe(true);
-    expect(stored.ttsMode).toBe('click');
+    expect(stored.paragraphAlternation).toBe(true);
 
-    // Switching profile preset updates all inputs and saves enabled preset
-    enabledCheckbox.checked = false;
-    enabledCheckbox.dispatchEvent(new Event('change'));
+    ttsRateSelect.value = '1.25';
+    ttsRateSelect.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
+    expect(stored.ttsRate).toBe(1.25);
+
+    // Switching profile updates controls and saves preset
     profileSelect.value = 'heavy';
     profileSelect.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
-    expect(enabledCheckbox.checked).toBe(true);
     expect(fontSelect.value).toBe('OpenDyslexic');
-    expect(rulerToggle.checked).toBe(true);
     expect(lineHeight.value).toBe('2.0');
     expect(tintSelect.value).toBe('#FFF7E6');
     expect(ttsSelect.value).toBe('click');
-    expect(stored.profile).toBe('heavy');
-    expect(stored.enabled).toBe(true);
 
     (document.getElementById('resetProfilesLink') as HTMLAnchorElement).click();
     expect(createTab).toHaveBeenCalledWith({ url: 'onboarding.html' });

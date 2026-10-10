@@ -1,5 +1,5 @@
 :root {
-  --md-sys-color-primary: #1A73E8;
+  --md-sys-color-primary: #0B57D0;
   --md-sys-color-on-primary: #FFFFFF;
   --md-sys-color-primary-container: #D3E3FD;
   --md-sys-color-on-primary-container: #041E49;
@@ -19,10 +19,36 @@
   --md-sys-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
 }
 
+:focus-visible {
+  outline: 2px solid #0B57D0;
+  outline-offset: 2px;
+}
+
 body {
   margin: 0;
   font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--md-sys-color-surface);
   color: var(--md-sys-color-on-surface);
   -webkit-font-smoothing: antialiased;
+}
+
+.m3-btn-tonal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--md-sys-shape-corner-full);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.m3-btn-tonal:hover {
+  box-shadow: var(--md-sys-elevation-1);
 }
