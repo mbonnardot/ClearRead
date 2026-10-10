@@ -7,7 +7,7 @@ const VALID_TINTS = new Set<TintColor>(['#FFFFFF', '#FBF0D9', '#FFF7E6', '#EAEFE
 const VALID_TTS_MODES = new Set<TtsMode>(['off', 'alt-click', 'click']);
 
 function isValidLineHeight(val: unknown): val is string {
-  if (typeof val !== 'string') return false;
+  if (!(typeof val === 'string' && /^\d+(\.\d+)?$/.test(val))) return false;
   const num = Number.parseFloat(val);
   return Number.isFinite(num) && num >= 1.2 && num <= 3.0;
 }

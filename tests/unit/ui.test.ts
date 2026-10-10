@@ -37,12 +37,29 @@ describe('Material Design 3 Onboarding & Popup UI controllers', () => {
     expect(previewBox.style.fontFamily).toContain('Lexend');
     expect(previewBox.style.lineHeight).toBe('1.65');
 
+    const mildCard = document.querySelector('[data-profile="mild"]') as HTMLElement;
+    const moderateCard = document.querySelector('[data-profile="moderate"]') as HTMLElement;
     const heavyCard = document.querySelector('[data-profile="heavy"]') as HTMLElement;
-    heavyCard.click();
 
+    expect(document.querySelector('.cards-grid')?.getAttribute('role')).toBe('radiogroup');
+    expect(mildCard.getAttribute('aria-checked')).toBe('true');
+    expect(moderateCard.getAttribute('aria-checked')).toBe('false');
+
+    moderateCard.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(moderateCard.classList.contains('selected')).toBe(true);
+    expect(moderateCard.getAttribute('aria-checked')).toBe('true');
+    expect(mildCard.getAttribute('aria-checked')).toBe('false');
+    expect(previewBox.style.fontFamily).toContain('Atkinson Hyperlegible');
+
+    heavyCard.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
     expect(heavyCard.classList.contains('selected')).toBe(true);
+    expect(heavyCard.getAttribute('aria-checked')).toBe('true');
     expect(previewBox.style.fontFamily).toContain('OpenDyslexic');
     expect(previewBox.style.lineHeight).toBe('2');
+
+    // Non-selection keys are ignored
+    mildCard.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(heavyCard.getAttribute('aria-checked')).toBe('true');
 
     const saveStatus = document.getElementById('saveStatus') as HTMLElement;
     (document.getElementById('saveBtn') as HTMLButtonElement).click();

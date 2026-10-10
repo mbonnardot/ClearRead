@@ -67,11 +67,13 @@ describe('shared profiles & storage contract', () => {
       enabled: 'invalid',
       profile: 'unknown',
       font: 'Comic Sans',
-      lineHeight: '99',
+      lineHeight: '1.5px',
       tintColor: '#000000',
       ttsMode: 'scream'
     });
     expect(cleaned).toEqual(DEFAULT_SETTINGS);
+    expect(sanitizeSettings({ lineHeight: 1.5 }).lineHeight).toBe(DEFAULT_SETTINGS.lineHeight);
+    expect(sanitizeSettings({ lineHeight: '99' }).lineHeight).toBe(DEFAULT_SETTINGS.lineHeight);
   });
 
   it('reads, updates immutably, and notifies subscribers on sync changes', async () => {

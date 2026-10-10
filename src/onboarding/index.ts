@@ -25,14 +25,26 @@ export function initOnboarding(doc: Document = document): void {
 
   updatePreview(currentProfile);
 
+  const selectCard = (card: HTMLElement) => {
+    cards.forEach((c) => {
+      c.classList.remove('selected');
+      c.setAttribute('aria-checked', 'false');
+    });
+    card.classList.add('selected');
+    card.setAttribute('aria-checked', 'true');
+    const key = card.dataset.profile as ProfileKey | undefined;
+    if (key && key in PROFILES) {
+      currentProfile = key;
+      updatePreview(currentProfile);
+    }
+  };
+
   cards.forEach((card) => {
-    card.addEventListener('click', () => {
-      cards.forEach((c) => c.classList.remove('selected'));
-      card.classList.add('selected');
-      const key = card.dataset.profile as ProfileKey | undefined;
-      if (key && key in PROFILES) {
-        currentProfile = key;
-        updatePreview(currentProfile);
+    card.addEventListener('click', () => selectCard(card));
+    card.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        selectCard(card);
       }
     });
   });

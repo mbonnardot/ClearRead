@@ -54,16 +54,16 @@
   <div class="page-wrapper">
     <h1 class="headline-large">Choose your reading profile</h1>
     <p class="body-large">Select the profile that feels easiest on your eyes. You can fine-tune individual controls at any time.</p>
-    <div class="cards-grid">
-      <div class="m3-card selected" data-profile="mild">
+    <div class="cards-grid" role="radiogroup" aria-label="Reading profiles">
+      <div class="m3-card selected" role="radio" tabindex="0" aria-checked="true" data-profile="mild">
         <h2 class="title-medium">Subtle Clarity</h2>
         <p class="body-medium">For mild fatigue. Generous spacing and Lexend typography without color washes or reading guides.</p>
       </div>
-      <div class="m3-card" data-profile="moderate">
+      <div class="m3-card" role="radio" tabindex="0" aria-checked="false" data-profile="moderate">
         <h2 class="title-medium">Focused Tracking</h2>
         <p class="body-medium">For tracking drift and line-skipping. Includes a warm tint, Atkinson Hyperlegible, and a dynamic ruler.</p>
       </div>
-      <div class="m3-card" data-profile="heavy">
+      <div class="m3-card" role="radio" tabindex="0" aria-checked="false" data-profile="heavy">
         <h2 class="title-medium">Multi-Sensory</h2>
         <p class="body-medium">For high decoding strain. Weighted OpenDyslexic characters, soft peach tint, and click-to-speak audio.</p>
       </div>

@@ -80,4 +80,25 @@ describe('content textMapper', () => {
     expect(createWordRange(segment, 5)).toBeNull(); // space character has no word tokens
     expect(createWordRange(segment, 6, 5)?.toString()).toBe('world');
   });
+
+  it('skips hidden/non-prose nodes and falls back gracefully on non-BCP-47 locales like en_US', () => {
+    document.body.innerHTML = `
+      <p id="mixed">
+        Visible lead sentence.
+        <span hidden>Hidden text.</span>
+        <span aria-hidden="true">Decorative glyph.</span>
+        <script>console.log("ignored");</script>
+        <style>.x { color: red; }</style>
+        <noscript>Fallback notice.</noscript>
+        Visible closing sentence.
+      </p>
+    `;
+    const mixed = document.getElementById('mixed')!;
+    const segments = extractSentenceSegments(mixed, 'en_US');
+
+    expect(segments.map((s) => s.text)).toEqual([
+      'Visible lead sentence.',
+      'Visible closing sentence.'
+    ]);
+  });
 });

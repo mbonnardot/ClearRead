@@ -53,6 +53,16 @@ function resolvePosition(
   return { node: last.node, offset: last.node.length };
 }
 
+const IGNORED_TEXT_PARENT_SELECTOR = 'script, style, noscript, [hidden], [aria-hidden="true"]';
+
+function createSentenceSegmenter(lang: string): Intl.Segmenter {
+  try {
+    return new Intl.Segmenter(lang, { granularity: 'sentence' });
+  } catch {
+    return new Intl.Segmenter('en', { granularity: 'sentence' });
+  }
+}
+
 export function extractSentenceSegments(
   block: HTMLElement,
   lang: string = document.documentElement.lang || 'en'
@@ -64,7 +74,11 @@ export function extractSentenceSegments(
 
   let current = walker.nextNode();
   while (current) {
-    if (current instanceof Text && current.data.length > 0) {
+    if (
+      current instanceof Text &&
+      current.data.length > 0 &&
+      !current.parentElement?.closest(IGNORED_TEXT_PARENT_SELECTOR)
+    ) {
       slices.push({
         node: current,
         start: cursor,
@@ -80,7 +94,7 @@ export function extractSentenceSegments(
   const fullText = slices.map((s) => s.node.data).join('');
   if (fullText.trim().length < 2) return [];
 
-  const segmenter = new Intl.Segmenter(lang, { granularity: 'sentence' });
+  const segmenter = createSentenceSegmenter(lang);
   const segments: SentenceSegment[] = [];
 
   for (const item of segmenter.segment(fullText)) {
