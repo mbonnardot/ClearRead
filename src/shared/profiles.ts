@@ -7,39 +7,59 @@ export const PROFILES: Readonly<Record<ProfileKey, ProfilePreset>> = Object.free
     enabled: true,
     profile: 'mild',
     font: 'Lexend',
+    fontScale: 100,
     lineHeight: '1.65',
-    letterSpacing: '0.04em',
-    wordSpacing: '0.10em',
+    letterSpacing: '0.02em',
+    wordSpacing: '0.06em',
     tintColor: '#FFFFFF',
     rulerEnabled: false,
-    ttsMode: 'off'
+    rulerStyle: 'narrow',
+    bionicReading: false,
+    syllableDots: false,
+    paragraphAlternation: false,
+    ttsMode: 'off',
+    ttsRate: 1,
+    excludedDomains: Object.freeze([])
   }),
   moderate: Object.freeze({
     enabled: true,
     profile: 'moderate',
     font: 'Atkinson Hyperlegible',
+    fontScale: 105,
     lineHeight: '1.8',
-    letterSpacing: '0.06em',
-    wordSpacing: '0.14em',
+    letterSpacing: '0.05em',
+    wordSpacing: '0.12em',
     tintColor: '#FBF0D9',
     rulerEnabled: true,
-    ttsMode: 'alt-click'
+    rulerStyle: 'medium',
+    bionicReading: true,
+    syllableDots: false,
+    paragraphAlternation: true,
+    ttsMode: 'alt-click',
+    ttsRate: 1,
+    excludedDomains: Object.freeze([])
   }),
   heavy: Object.freeze({
     enabled: true,
     profile: 'heavy',
     font: 'OpenDyslexic',
+    fontScale: 110,
     lineHeight: '2.0',
     letterSpacing: '0.08em',
-    wordSpacing: '0.18em',
+    wordSpacing: '0.16em',
     tintColor: '#FFF7E6',
     rulerEnabled: true,
-    ttsMode: 'click'
+    rulerStyle: 'narrow',
+    bionicReading: true,
+    syllableDots: true,
+    paragraphAlternation: true,
+    ttsMode: 'click',
+    ttsRate: 1,
+    excludedDomains: Object.freeze([])
   })
 });
 
 export const DEFAULT_SETTINGS: ClearReadSettings = Object.freeze({
   ...PROFILES.moderate,
-  enabled: false,
   hasSeenOnboarding: false
 });

@@ -26,6 +26,11 @@ for (const [src, dest] of fontMappings) {
   copyFileSync(resolve(root, src), resolve(root, dest));
 }
 
+copyFileSync(
+  resolve(root, 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs'),
+  resolve(root, 'public/pdf.worker.min.mjs')
+);
+
 function createIcon128Png() {
   const width = 128;
   const height = 128;
