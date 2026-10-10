@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, 'src/popup/popup.html'),
         onboarding: resolve(__dirname, 'src/onboarding/onboarding.html'),
+        pdf: resolve(__dirname, 'src/pdf/pdf.html'),
         background: resolve(__dirname, 'src/background/index.ts')
       },
       output: {

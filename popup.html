@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="./styles/m3-theme.css">
   <style>
     body {
-      width: 280px;
+      width: 310px;
       padding: 16px;
       background-color: var(--md-sys-color-surface-container-low);
     }
@@ -15,38 +15,49 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
-    .header h2 { font-size: 18px; font-weight: 500; margin: 0; }
-    .m3-field { margin-bottom: 14px; }
+    .header h1 { font-size: 18px; font-weight: 600; margin: 0; }
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .m3-field { margin-bottom: 12px; }
     .m3-field label {
-      display: block;
+      display: flex;
+      justify-content: space-between;
       font-size: 12px;
       font-weight: 500;
       color: var(--md-sys-color-on-surface-variant);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     select {
       width: 100%;
-      height: 38px;
-      padding: 0 12px;
+      height: 36px;
+      padding: 0 10px;
       border-radius: 8px;
       border: 1px solid var(--md-sys-color-outline);
       background: var(--md-sys-color-surface);
       color: var(--md-sys-color-on-surface);
-      font-size: 14px;
+      font-size: 13px;
     }
     .m3-switch-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
-    .m3-switch-row label { font-size: 14px; color: var(--md-sys-color-on-surface); cursor: pointer; }
+    .m3-switch-row label { font-size: 13px; color: var(--md-sys-color-on-surface); cursor: pointer; }
     input[type="range"] { width: 100%; accent-color: var(--md-sys-color-primary); }
+    .section-divider {
+      border-top: 1px solid var(--md-sys-color-outline-variant);
+      margin: 12px 0;
+    }
     .re-onboard-link {
       display: block;
-      margin-top: 14px;
+      margin-top: 12px;
       text-align: center;
       font-size: 12px;
       color: var(--md-sys-color-primary);
@@ -55,15 +66,27 @@
     }
     .re-onboard-link:hover { text-decoration: underline; }
   </style>
-  <script type="module" crossorigin src="./assets/popup-DuI5QBZA.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/profiles-832V55GF.js">
+  <script type="module" crossorigin src="./assets/popup-ByrJUVIR.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/profiles-CZR3WoYI.js">
+  <link rel="modulepreload" crossorigin href="./assets/storage-xVF56a--.js">
   <link rel="modulepreload" crossorigin href="./assets/tabInjector-CL-ySqFi.js">
 </head>
 <body>
-  <div class="header">
-    <h2>ClearRead</h2>
+  <header class="header">
+    <h1>ClearRead</h1>
     <input type="checkbox" id="enabled" aria-label="Enable ClearRead">
+  </header>
+
+  <div class="quick-actions">
+    <button type="button" id="readerViewBtn" class="m3-btn-tonal">📖 Reader View</button>
+    <button type="button" id="openPdfBtn" class="m3-btn-tonal">📄 PDF Reader</button>
   </div>
+
+  <div class="m3-switch-row">
+    <label for="siteToggle">Enable on this site</label>
+    <input type="checkbox" id="siteToggle">
+  </div>
+
   <div class="m3-field">
     <label for="profileSelect">Reading Profile</label>
     <select id="profileSelect">
@@ -72,6 +95,7 @@
       <option value="heavy">Multi-Sensory</option>
     </select>
   </div>
+
   <div class="m3-field">
     <label for="fontSelect">Typeface</label>
     <select id="fontSelect">
@@ -80,14 +104,28 @@
       <option value="OpenDyslexic">OpenDyslexic</option>
     </select>
   </div>
-  <div class="m3-switch-row">
-    <label for="rulerToggle">Reading Ruler</label>
-    <input type="checkbox" id="rulerToggle">
-  </div>
+
   <div class="m3-field">
-    <label for="lineHeight">Line Spacing</label>
+    <label for="fontScale">Text Scale <span id="fontScaleVal">105%</span></label>
+    <input type="range" id="fontScale" min="90" max="140" step="5" value="105">
+  </div>
+
+  <div class="m3-field">
+    <label for="lineHeight">Line Spacing <span id="lineHeightVal">1.8</span></label>
     <input type="range" id="lineHeight" min="1.4" max="2.4" step="0.05" value="1.8">
   </div>
+
+  <div class="m3-field">
+    <label for="rulerStyleSelect">Focus Mask / Reading Guide</label>
+    <select id="rulerStyleSelect">
+      <option value="off">Off</option>
+      <option value="bar">Classic Amber Ruler</option>
+      <option value="narrow">Focus Mask — 1 Line (Narrow)</option>
+      <option value="medium">Focus Mask — 3 Lines (Medium)</option>
+      <option value="wide">Focus Mask — 5 Lines (Wide)</option>
+    </select>
+  </div>
+
   <div class="m3-field">
     <label for="tintSelect">Paper Tint</label>
     <select id="tintSelect">
@@ -97,6 +135,24 @@
       <option value="#EAEFE9">Muted Sage</option>
     </select>
   </div>
+
+  <div class="section-divider"></div>
+
+  <div class="m3-switch-row">
+    <label for="bionicToggle">Bionic Fixation Bolding</label>
+    <input type="checkbox" id="bionicToggle">
+  </div>
+  <div class="m3-switch-row">
+    <label for="syllableToggle">Syllable Dots (Reader &amp; PDF)</label>
+    <input type="checkbox" id="syllableToggle">
+  </div>
+  <div class="m3-switch-row">
+    <label for="alternationToggle">Return-Sweep Paragraph Guide</label>
+    <input type="checkbox" id="alternationToggle">
+  </div>
+
+  <div class="section-divider"></div>
+
   <div class="m3-field">
     <label for="ttsSelect">Micro-TTS Audio</label>
     <select id="ttsSelect">
@@ -105,6 +161,17 @@
       <option value="click">Click to Speak</option>
     </select>
   </div>
+
+  <div class="m3-field">
+    <label for="ttsRateSelect">Speech Rate</label>
+    <select id="ttsRateSelect">
+      <option value="0.75">0.75x (Calm)</option>
+      <option value="1">1.0x (Natural)</option>
+      <option value="1.25">1.25x (Brisk)</option>
+      <option value="1.5">1.5x (Fast)</option>
+    </select>
+  </div>
+
   <a class="re-onboard-link" id="resetProfilesLink" href="#onboarding">Recalibrate Profile</a>
 </body>
 </html>

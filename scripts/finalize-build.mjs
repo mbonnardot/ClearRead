@@ -7,7 +7,8 @@ const distDir = resolve(rootDir, 'dist');
 
 const htmlMappings = [
   ['dist/src/popup/popup.html', 'dist/popup.html'],
-  ['dist/src/onboarding/onboarding.html', 'dist/onboarding.html']
+  ['dist/src/onboarding/onboarding.html', 'dist/onboarding.html'],
+  ['dist/src/pdf/pdf.html', 'dist/pdf.html']
 ];
 
 for (const [srcRel, destRel] of htmlMappings) {
@@ -33,6 +34,8 @@ const rootSyncItems = [
   'content.js',
   'popup.html',
   'onboarding.html',
+  'pdf.html',
+  'pdf.worker.min.mjs',
   'assets',
   'fonts',
   'styles'

@@ -1,66 +1,54 @@
-# ClearRead
+# ClearRead v2 — Open-Source Dyslexia Web & PDF Reader
 
-ClearRead is an open-source Chrome Manifest V3 reading assistant built with Material Design 3 for dyslexic readers, visual fatigue relief, and focused comprehension. All typography assets are bundled offline with zero external runtime network requests.
+**ClearRead v2** is a free, zero-telemetry Material Design 3 Chrome Extension (Manifest V3) built for comfortable, distraction-free web and PDF reading. It bundles all accessibility fonts and `PDF.js` offline—never sending reading content or analytics over the network.
 
-## Features
+---
 
-- **Calibrated Reading Profiles**: Instant presets for varying reading needs:
-  - **Subtle Clarity (`mild`)**: Generous vertical and horizontal spacing with **Lexend** typography.
-  - **Focused Tracking (`moderate`)**: **Atkinson Hyperlegible** typography, warm paper tint (`#FBF0D9`), dynamic reading ruler, and `Alt + Click` text-to-speech.
-  - **Multi-Sensory (`heavy`)**: Weighted **OpenDyslexic** characters, soft peach tint (`#FFF7E6`), dynamic reading ruler, and direct `Click` text-to-speech.
-- **Bundled Offline Fonts**: Includes self-hosted `.woff2` files for `Lexend`, `Atkinson Hyperlegible`, and `OpenDyslexic`.
-- **Non-Destructive Micro-TTS Highlighting**: Uses native `Intl.Segmenter` sentence/word range mapping and the CSS Custom Highlight API (`CSS.highlights`) to highlight spoken sentences and words without mutating page DOM structure.
-- **Shadow DOM Overlay Isolation**: Renders the cursor-tracking reading ruler and floating Pause/Resume + Stop TTS control pill inside an isolated `#clearread-overlay-host` Shadow root.
-- **Material Design 3 UI**: Keyboard-accessible onboarding flow (`onboarding.html`) with live typography preview and toolbar popup (`popup.html`) backed by immutable, schema-sanitized `chrome.storage.sync` persistence.
+## Key Capabilities
 
-## Local Unpacked Chrome Setup
+1. **Dual-Mode Non-Destructive Web Engine**
+   - **In-Page Mode (`src/content/styleEngine.ts`):** Enhances prose (`Lexend`, `Atkinson Hyperlegible`, `OpenDyslexic`), customizable font scaling (`90%–150%`), generous line/letter/word spacing, Return-Sweep Paragraph Alternation, and Shadow DOM `mix-blend-mode: multiply` paper tinting (`#clearread-tint-layer`) while strictly preserving host dark themes, badges, buttons, and multi-column grid layouts.
+   - **Distraction-Free Reader View (`Alt+R` / Popup Trigger):** Extracts clean articles via `@mozilla/readability` into an isolated Shadow DOM modal (`<dialog id="clearread-reader-dialog">`) with full paper tint backgrounds, keyboard focus management, and live toggles.
+2. **Competitive Dyslexia & Focus Aids**
+   - **Focus Mask Line Modes:** Classic Tint Bar (`bar`) plus shaded viewport curtains (`#clearread-mask-top` / `#clearread-mask-bottom`) framing `narrow` (1-line), `medium` (3-line), or `wide` (5-line) reading windows.
+   - **Bionic Fixation Bolding:** Highlights word prefixes (`<strong class="cr-bionic">`) to guide saccadic eye fixations.
+   - **Syllable Dots (`im·mer·sive`):** Splits multisyllabic words with subtle interpuncts (`·`) for effortless decoding.
+   - **Return-Sweep Paragraph Alternation:** Adds subtle left accent borders on alternating paragraphs to prevent line-skipping.
+   - **Per-Site Exclusions:** Toggle ClearRead on or off per domain directly from the toolbar popup.
+3. **Offline Accessible `PDF.js` Reader (`pdf.html`)**
+   - Opens any web PDF URL (via floating `"📖 Read PDF in ClearRead"` pill on PDF tabs or the popup `"📄 PDF Reader"` button) or local PDF file (drag-and-drop / file picker).
+   - **Reflowed Dyslexia Mode:** Reconstructs multi-line PDF paragraphs with full dyslexia fonts, Bionic bolding, Syllable dots, Focus Masks, paper tints, and click-to-read synchronized speech (`0.75x–1.5x`).
+   - **Original Layout Mode:** Renders exact `PDF.js` page canvases alongside selectable text blocks.
 
-1. Install dependencies and build the extension bundle:
+---
 
-   ```bash
-   npm install && npm run build
-   ```
+## Install Unpacked in Chrome
 
-2. Open Google Chrome and navigate to `chrome://extensions`.
-3. Enable **Developer mode** in the top-right corner.
-4. Click **Load unpacked** and select the generated `dist/` directory.
-
-## Architecture
-
-```text
-src/
-├── shared/
-│   ├── types.ts        # Strict TypeScript interfaces and literal union types
-│   ├── profiles.ts     # Immutable reading presets (mild, moderate, heavy) & defaults
-│   └── storage.ts      # Sanitized chrome.storage.sync wrapper & change subscriptions
-├── content/
-│   ├── styleEngine.ts  # Dynamic CSS custom properties, font-face injection, and surface tints
-│   ├── textMapper.ts   # Non-destructive DOM TreeWalker + Intl.Segmenter sentence/word ranges
-│   ├── ttsEngine.ts    # Web Speech synthesis controller synced with CSS.highlights ranges
-│   ├── overlayHost.ts  # Closed/isolated Shadow DOM reading ruler & floating TTS pill
-│   └── index.ts        # Content script orchestrator subscribing to storage changes
-├── background/
-│   └── index.ts        # MV3 service worker opening onboarding on install
-├── onboarding/
-│   └── index.ts        # Material Design 3 profile picker & live preview controller
-└── popup/
-    └── index.ts        # Extension action popup controller for live setting adjustments
-```
-
-## Verification & Testing
-
-Run TypeScript type checking, production bundling, unit test coverage (Vitest + `v8`), and end-to-end Chromium MV3 extension tests (Playwright):
+Both the repository root (`/`) and `dist/` contain the complete built Manifest V3 extension:
 
 ```bash
-# Type-check source and tests
+npm install
+npm run build
+```
+
+1. Open `chrome://extensions` in Chrome or Chromium.
+2. Enable **Developer mode** (top right).
+3. Click **Load unpacked** and select either the project root directory or `dist/`.
+
+---
+
+## Development & Verification Suite
+
+```bash
+# Typecheck strict TypeScript across src/ and tests/
 npx tsc --noEmit
 
-# Build extension into dist/
+# Build standalone IIFE content script + multi-entry MV3 bundle (syncing root & dist/)
 npm run build
 
-# Run unit tests with v8 code coverage
+# Run Vitest unit & integration test suite with v8 coverage (≥80% enforced)
 npm run test:coverage
 
-# Run Playwright MV3 Chromium extension E2E tests
+# Run Playwright Chromium unpacked extension E2E tests
 npm run test:e2e
 ```

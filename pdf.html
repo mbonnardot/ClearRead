@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClearRead — Accessible PDF Reader</title>
+    <link rel="stylesheet" href="./styles/fonts.css" />
+    <link rel="stylesheet" href="./styles/m3-theme.css" />
+    <style>
+      body {
+        margin: 0;
+        background: var(--cr-pdf-bg, #fbf0d9);
+        color: #1f1f1f;
+        min-height: 100vh;
+      }
+      .pdf-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 20px;
+        background: rgba(254, 247, 255, 0.96);
+        border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        backdrop-filter: blur(8px);
+      }
+      .pdf-toolbar label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .pdf-workspace {
+        max-width: 820px;
+        margin: 28px auto 80px;
+        padding: 0 24px;
+      }
+      .pdf-dropzone {
+        border: 2px dashed var(--md-sys-color-primary);
+        border-radius: 18px;
+        padding: 48px 28px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.72);
+      }
+      .pdf-reflow-page {
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.42);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      }
+      .pdf-reflow-page p {
+        max-width: 72ch;
+        margin: 0 0 1.2em;
+        color: #1f1f1f;
+      }
+      .cr-pdf-alternation .pdf-reflow-page p:nth-of-type(even) {
+        border-left: 3px solid rgba(11, 87, 208, 0.45);
+        padding-left: 12px;
+      }
+      .pdf-canvas-page {
+        position: relative;
+        margin: 0 auto 24px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        background: #ffffff;
+      }
+      .pdf-page-canvas {
+        display: block;
+        max-width: 100%;
+      }
+      .pdf-text-layer {
+        position: relative;
+        padding: 16px 24px;
+        border-top: 1px solid #e0e2e0;
+      }
+      ::highlight(clearread-sentence) {
+        background-color: #fff3b0;
+      }
+      ::highlight(clearread-word) {
+        background-color: #fde68a;
+        color: #111111;
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/pdf-DUvt5uIG.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/profiles-CZR3WoYI.js">
+    <link rel="modulepreload" crossorigin href="./assets/storage-xVF56a--.js">
+  </head>
+  <body>
+    <header class="pdf-toolbar" role="region" aria-label="PDF Reader Controls">
+      <strong>ClearRead PDF</strong>
+      <button id="modeReflowBtn" class="m3-tonal-btn" type="button" aria-pressed="true">Reflowed Dyslexia</button>
+      <button id="modeCanvasBtn" class="m3-tonal-btn" type="button" aria-pressed="false">Original Layout</button>
+      <button id="openLocalPdfBtn" class="m3-tonal-btn" type="button">Open Local PDF</button>
+      <input id="pdfFileInput" type="file" accept="application/pdf" hidden />
+
+      <select id="pdfFontSelect" aria-label="PDF Font">
+        <option value="Lexend">Lexend</option>
+        <option value="Atkinson Hyperlegible">Atkinson Hyperlegible</option>
+        <option value="OpenDyslexic">OpenDyslexic</option>
+      </select>
+
+      <input id="pdfScaleRange" type="range" min="90" max="150" step="5" value="105" aria-label="PDF Text Scale" />
+
+      <select id="pdfRulerSelect" aria-label="Focus Mask Mode">
+        <option value="bar">Tint Bar</option>
+        <option value="narrow">Narrow (1-line)</option>
+        <option value="medium">Medium (3-line)</option>
+        <option value="wide">Wide (5-line)</option>
+      </select>
+
+      <select id="pdfTintSelect" aria-label="Paper Tint">
+        <option value="#FFFFFF">White</option>
+        <option value="#FBF0D9">Warm Sepia</option>
+        <option value="#FFF7E6">Soft Cream</option>
+        <option value="#EAEFE9">Calm Sage</option>
+      </select>
+
+      <label><input id="pdfBionicToggle" type="checkbox" /> Bionic</label>
+      <label><input id="pdfSyllablesToggle" type="checkbox" /> Syllables</label>
+
+      <select id="pdfRateSelect" aria-label="Speech Speed">
+        <option value="0.75">0.75x</option>
+        <option value="1">1.0x</option>
+        <option value="1.25">1.25x</option>
+        <option value="1.5">1.5x</option>
+      </select>
+    </header>
+
+    <main id="pdfWorkspace" class="pdf-workspace">
+      <section id="pdfDropzone" class="pdf-dropzone" aria-label="Drop or select a PDF file">
+        <h1>Open Any PDF in ClearRead</h1>
+        <p>Drag and drop a local PDF file here, or select a PDF from your device for reflowed dyslexia typography, focus masks, and speech.</p>
+        <p id="pdfStatus" role="status" aria-live="polite"></p>
+      </section>
+
+      <article id="pdfReflowContainer" class="pdf-reflow-container" hidden></article>
+      <div id="pdfCanvasContainer" class="pdf-canvas-container" hidden></div>
+    </main>
+
+  </body>
+</html>

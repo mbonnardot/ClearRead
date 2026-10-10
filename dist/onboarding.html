@@ -12,18 +12,20 @@
     .body-large { font-size: 16px; line-height: 24px; color: var(--md-sys-color-on-surface-variant); margin: 0 0 36px; text-align: center; }
     .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
     .m3-card {
+      text-align: left;
+      font-family: inherit;
       background: var(--md-sys-color-surface);
       border: 1px solid var(--md-sys-color-outline-variant);
       border-radius: var(--md-sys-shape-corner-large);
       padding: 20px;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), border-color 0.2s cubic-bezier(0.2, 0, 0, 1);
     }
     .m3-card:hover { box-shadow: var(--md-sys-elevation-1); border-color: var(--md-sys-color-outline); }
     .m3-card.selected { background: var(--md-sys-color-primary-container); border-color: var(--md-sys-color-primary); }
-    .m3-card .title-medium { font-size: 16px; font-weight: 500; color: var(--md-sys-color-on-surface); margin: 0 0 8px; }
+    .m3-card .title-medium { display: block; font-size: 16px; font-weight: 500; color: var(--md-sys-color-on-surface); margin: 0 0 8px; }
     .m3-card.selected .title-medium { color: var(--md-sys-color-on-primary-container); }
-    .m3-card .body-medium { font-size: 14px; line-height: 20px; color: var(--md-sys-color-on-surface-variant); margin: 0; }
+    .m3-card .body-medium { display: block; font-size: 14px; line-height: 20px; color: var(--md-sys-color-on-surface-variant); margin: 0; }
     .m3-card.selected .body-medium { color: var(--md-sys-color-on-primary-container); }
     .preview-card {
       background: var(--md-sys-color-surface-container-low);
@@ -33,7 +35,7 @@
       border: 1px solid var(--md-sys-color-outline-variant);
     }
     .label-small { font-size: 11px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); margin-bottom: 12px; }
-    #previewBox { padding: 20px; border-radius: var(--md-sys-shape-corner-medium); transition: all 0.2s ease; color: #1F1F1F; }
+    #previewBox { padding: 20px; border-radius: var(--md-sys-shape-corner-medium); color: #1F1F1F; }
     .actions { display: flex; flex-direction: column; align-items: center; gap: 12px; }
     .m3-btn-filled {
       height: 48px;
@@ -49,38 +51,38 @@
     .m3-btn-filled:hover { box-shadow: var(--md-sys-elevation-1); }
     #saveStatus { font-size: 13px; color: var(--md-sys-color-primary); min-height: 18px; }
   </style>
-  <script type="module" crossorigin src="./assets/onboarding-bXZs4P1v.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/profiles-832V55GF.js">
+  <script type="module" crossorigin src="./assets/onboarding-BOHHjyGt.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/profiles-CZR3WoYI.js">
   <link rel="modulepreload" crossorigin href="./assets/tabInjector-CL-ySqFi.js">
 </head>
 <body>
-  <div class="page-wrapper">
+  <main class="page-wrapper">
     <h1 class="headline-large">Choose your reading profile</h1>
     <p class="body-large">Select the profile that feels easiest on your eyes. You can fine-tune individual controls at any time.</p>
-    <div class="cards-grid" role="radiogroup" aria-label="Reading profiles">
-      <div class="m3-card selected" role="radio" tabindex="0" aria-checked="true" data-profile="mild">
-        <h2 class="title-medium">Subtle Clarity</h2>
-        <p class="body-medium">For mild fatigue. Generous spacing and Lexend typography without color washes or reading guides.</p>
-      </div>
-      <div class="m3-card" role="radio" tabindex="0" aria-checked="false" data-profile="moderate">
-        <h2 class="title-medium">Focused Tracking</h2>
-        <p class="body-medium">For tracking drift and line-skipping. Includes a warm tint, Atkinson Hyperlegible, and a dynamic ruler.</p>
-      </div>
-      <div class="m3-card" role="radio" tabindex="0" aria-checked="false" data-profile="heavy">
-        <h2 class="title-medium">Multi-Sensory</h2>
-        <p class="body-medium">For high decoding strain. Weighted OpenDyslexic characters, soft peach tint, and click-to-speak audio.</p>
-      </div>
+    <div class="cards-grid" role="group" aria-label="Reading profiles">
+      <button type="button" class="m3-card selected" aria-pressed="true" data-profile="mild">
+        <span class="title-medium">Subtle Clarity</span>
+        <span class="body-medium">For mild fatigue. Generous spacing and Lexend typography without color washes or reading guides.</span>
+      </button>
+      <button type="button" class="m3-card" aria-pressed="false" data-profile="moderate">
+        <span class="title-medium">Focused Tracking</span>
+        <span class="body-medium">For tracking drift and line-skipping. Includes a warm tint, Atkinson Hyperlegible, and a 3-line focus mask.</span>
+      </button>
+      <button type="button" class="m3-card" aria-pressed="false" data-profile="heavy">
+        <span class="title-medium">Multi-Sensory</span>
+        <span class="body-medium">For high decoding strain. Weighted OpenDyslexic characters, bionic bolding, syllable cues, and speech.</span>
+      </button>
     </div>
-    <div class="preview-card">
+    <section class="preview-card">
       <div class="label-small">Live Text Preview</div>
       <div id="previewBox">
         Reading on screen should not feel like an obstacle course. When typography is given generous vertical breathing room and letters have distinct forms, words stop blending together. Try choosing a profile above to see how this paragraph shifts.
       </div>
-    </div>
+    </section>
     <div class="actions">
       <button class="m3-btn-filled" id="saveBtn" type="button">Apply Profile &amp; Start Reading</button>
       <div id="saveStatus" aria-live="polite"></div>
     </div>
-  </div>
+  </main>
 </body>
 </html>

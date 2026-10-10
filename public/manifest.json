@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ClearRead",
-  "version": "1.0.0",
-  "description": "Free, open-source dyslexia reader with typography presets, reading ruler, and word-synchronized text-to-speech.",
+  "version": "2.0.0",
+  "description": "Free, open-source dyslexia web & PDF reader with non-destructive typography, Reader View, Bionic bolding, Syllable dots, Focus Masks, and synchronized speech.",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": ["<all_urls>"],
   "action": {
@@ -24,7 +24,14 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["fonts/*", "onboarding.html"],
+      "resources": [
+        "fonts/*.woff2",
+        "styles/*.css",
+        "onboarding.html",
+        "pdf.html",
+        "pdf.worker.min.mjs",
+        "assets/*"
+      ],
       "matches": ["<all_urls>"]
     }
   ]
