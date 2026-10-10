@@ -1,0 +1,1 @@
+import{i as o}from"./assets/tabInjector-CL-ySqFi.js";function t(){chrome.runtime.onInstalled.addListener(n=>{n.reason==="install"&&chrome.tabs.create({url:"onboarding.html"}),(n.reason==="install"||n.reason==="update")&&o()})}var e;typeof chrome<"u"&&((e=chrome.runtime)!=null&&e.onInstalled)&&t();

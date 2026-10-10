@@ -1,0 +1,28 @@
+:root {
+  --md-sys-color-primary: #1A73E8;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #D3E3FD;
+  --md-sys-color-on-primary-container: #041E49;
+
+  --md-sys-color-surface: #F8F9FA;
+  --md-sys-color-surface-container-low: #F1F3F4;
+  --md-sys-color-surface-container: #E8EAED;
+  --md-sys-color-surface-container-high: #DADCE0;
+  --md-sys-color-on-surface: #1F1F1F;
+  --md-sys-color-on-surface-variant: #444746;
+  --md-sys-color-outline: #747775;
+  --md-sys-color-outline-variant: #C4C7C5;
+
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-full: 9999px;
+  --md-sys-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
+}
+
+body {
+  margin: 0;
+  font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  -webkit-font-smoothing: antialiased;
+}
