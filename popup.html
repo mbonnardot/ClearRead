@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ClearRead Controls</title>
+  <link rel="stylesheet" href="./styles/fonts.css">
+  <link rel="stylesheet" href="./styles/m3-theme.css">
+  <style>
+    body {
+      width: 280px;
+      padding: 16px;
+      background-color: var(--md-sys-color-surface-container-low);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .header h2 { font-size: 18px; font-weight: 500; margin: 0; }
+    .m3-field { margin-bottom: 14px; }
+    .m3-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-bottom: 6px;
+    }
+    select {
+      width: 100%;
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid var(--md-sys-color-outline);
+      background: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+      font-size: 14px;
+    }
+    .m3-switch-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .m3-switch-row label { font-size: 14px; color: var(--md-sys-color-on-surface); cursor: pointer; }
+    input[type="range"] { width: 100%; accent-color: var(--md-sys-color-primary); }
+    .re-onboard-link {
+      display: block;
+      margin-top: 14px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--md-sys-color-primary);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .re-onboard-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>ClearRead</h2>
+    <input type="checkbox" id="enabled" aria-label="Enable ClearRead">
+  </div>
+  <div class="m3-field">
+    <label for="fontSelect">Typeface</label>
+    <select id="fontSelect">
+      <option value="Lexend">Lexend</option>
+      <option value="Atkinson Hyperlegible">Atkinson Hyperlegible</option>
+      <option value="OpenDyslexic">OpenDyslexic</option>
+    </select>
+  </div>
+  <div class="m3-switch-row">
+    <label for="rulerToggle">Reading Ruler</label>
+    <input type="checkbox" id="rulerToggle">
+  </div>
+  <div class="m3-field">
+    <label for="lineHeight">Line Spacing</label>
+    <input type="range" id="lineHeight" min="1.4" max="2.4" step="0.05" value="1.8">
+  </div>
+  <div class="m3-field">
+    <label for="tintSelect">Paper Tint</label>
+    <select id="tintSelect">
+      <option value="#FFFFFF">Clean White</option>
+      <option value="#FBF0D9">Warm Parchment</option>
+      <option value="#FFF7E6">Soft Peach</option>
+      <option value="#EAEFE9">Muted Sage</option>
+    </select>
+  </div>
+  <div class="m3-field">
+    <label for="ttsSelect">Micro-TTS Audio</label>
+    <select id="ttsSelect">
+      <option value="off">Off</option>
+      <option value="alt-click">Standby (Alt + Click)</option>
+      <option value="click">Click to Speak</option>
+    </select>
+  </div>
+  <a class="re-onboard-link" id="resetProfilesLink" href="#onboarding">Recalibrate Profile</a>
+  <script type="module" src="./src/popup/index.ts"></script>
+</body>
+</html>
