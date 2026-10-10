@@ -5,7 +5,15 @@ import { applyStyles, teardownStyles } from './styleEngine';
 import { shouldTriggerTts } from './textMapper';
 import { createTtsController } from './ttsEngine';
 
+declare global {
+  interface Window {
+    __clearReadCleanup?: () => void;
+  }
+}
+
 export async function initContentScript(): Promise<() => void> {
+  window.__clearReadCleanup?.();
+
   let state: ClearReadSettings = await getSettings();
 
   const overlay = createOverlayController({
@@ -18,12 +26,14 @@ export async function initContentScript(): Promise<() => void> {
     state = next;
     if (state.enabled) {
       applyStyles(state);
+      overlay.setTintColor(state.tintColor);
       overlay.setRulerEnabled(state.rulerEnabled);
       if (state.ttsMode === 'off') {
         tts.stop();
       }
     } else {
       teardownStyles();
+      overlay.setTintColor(null);
       overlay.setRulerEnabled(false);
       tts.stop();
     }
@@ -51,7 +61,7 @@ export async function initContentScript(): Promise<() => void> {
   window.addEventListener('click', onClick);
   window.addEventListener('keydown', onKeyDown);
 
-  return () => {
+  const cleanup = () => {
     unsubscribe();
     window.removeEventListener('click', onClick);
     window.removeEventListener('keydown', onKeyDown);
@@ -59,6 +69,9 @@ export async function initContentScript(): Promise<() => void> {
     overlay.destroy();
     teardownStyles();
   };
+
+  window.__clearReadCleanup = cleanup;
+  return cleanup;
 }
 
 if (typeof chrome !== 'undefined' && chrome.storage?.sync) {

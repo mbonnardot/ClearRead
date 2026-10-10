@@ -1,4 +1,5 @@
 import { PROFILES } from '../shared/profiles';
+import { injectContentScriptIntoOpenTabs } from '../shared/tabInjector';
 import type { ProfileKey } from '../shared/types';
 
 export function initOnboarding(doc: Document = document): void {
@@ -52,12 +53,14 @@ export function initOnboarding(doc: Document = document): void {
   saveBtn.addEventListener('click', () => {
     const settingsToSave = {
       ...PROFILES[currentProfile],
+      enabled: true,
       hasSeenOnboarding: true
     };
-    chrome.storage.sync.set(settingsToSave, () => {
+    chrome.storage.sync.set(settingsToSave, async () => {
       if (saveStatus) {
         saveStatus.textContent = 'Profile applied!';
       }
+      await injectContentScriptIntoOpenTabs();
       window.close();
     });
   });

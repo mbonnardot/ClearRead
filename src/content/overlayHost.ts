@@ -8,6 +8,7 @@ export interface OverlayCallbacks {
 export type TtsPillStatus = 'hidden' | 'speaking' | 'paused';
 
 export interface OverlayController {
+  setTintColor(color: string | null): void;
   setRulerEnabled(enabled: boolean): void;
   setTtsStatus(status: TtsPillStatus): void;
   destroy(): void;
@@ -16,6 +17,16 @@ export interface OverlayController {
 const SHADOW_STYLES = `
   :host {
     all: initial;
+  }
+  #clearread-tint-layer {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 2147483645;
+    mix-blend-mode: multiply;
+    display: none;
   }
   #clearread-ruler {
     position: fixed;
@@ -79,6 +90,10 @@ export function createOverlayController(
   const style = doc.createElement('style');
   style.textContent = SHADOW_STYLES;
 
+  const tintLayer = doc.createElement('div');
+  tintLayer.id = 'clearread-tint-layer';
+  tintLayer.style.display = 'none';
+
   const ruler = doc.createElement('div');
   ruler.id = 'clearread-ruler';
 
@@ -113,7 +128,7 @@ export function createOverlayController(
   });
 
   pill.append(statusSpan, pauseBtn, stopBtn);
-  shadow.append(style, ruler, pill);
+  shadow.append(style, tintLayer, ruler, pill);
   doc.documentElement.appendChild(host);
 
   let rulerActive = false;
@@ -128,10 +143,21 @@ export function createOverlayController(
   };
 
   return {
+    setTintColor(color: string | null) {
+      if (!color || color === '#FFFFFF') {
+        tintLayer.style.display = 'none';
+      } else {
+        tintLayer.style.backgroundColor = color;
+        tintLayer.style.display = 'block';
+      }
+    },
+
     setRulerEnabled(enabled: boolean) {
       if (enabled === rulerActive) return;
       rulerActive = enabled;
       if (enabled) {
+        ruler.style.display = 'block';
+        ruler.style.top = `${Math.round(window.innerHeight * 0.4)}px`;
         window.addEventListener('mousemove', onMouseMove, { passive: true });
       } else {
         window.removeEventListener('mousemove', onMouseMove);

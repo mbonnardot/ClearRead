@@ -7,8 +7,8 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        popup: resolve(__dirname, 'popup.html'),
-        onboarding: resolve(__dirname, 'onboarding.html'),
+        popup: resolve(__dirname, 'src/popup/popup.html'),
+        onboarding: resolve(__dirname, 'src/onboarding/onboarding.html'),
         background: resolve(__dirname, 'src/background/index.ts')
       },
       output: {

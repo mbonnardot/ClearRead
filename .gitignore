@@ -3,3 +3,12 @@ dist/
 coverage/
 test-results/
 .superpowers/
+/manifest.json
+/icon128.png
+/background.js
+/content.js
+/popup.html
+/onboarding.html
+/assets/
+/fonts/
+/styles/

@@ -17,19 +17,23 @@ describe('content styleEngine', () => {
     });
   });
 
-  it('injects offline @font-face declarations and scoped leaf prose styles without container max-width', () => {
+  it('injects offline @font-face declarations, broader prose/heading selectors, and leaf-only 75ch max-width', () => {
     applyStyles({ ...PROFILES.moderate, hasSeenOnboarding: true });
 
     const fontEl = document.getElementById(FONT_EL_ID);
     const styleEl = document.getElementById(STYLE_EL_ID);
+    const css = styleEl?.textContent ?? '';
     expect(fontEl).not.toBeNull();
     expect(fontEl?.textContent).toContain('chrome-extension://test-ext/fonts/AtkinsonHyperlegible-Regular.woff2');
     expect(styleEl).not.toBeNull();
-    expect(styleEl?.textContent).toContain("font-family: 'Atkinson Hyperlegible'");
-    expect(styleEl?.textContent).toContain('max-width: 75ch !important;');
-    expect(styleEl?.textContent).not.toMatch(/main.*max-width/s);
-    expect(styleEl?.textContent).toContain('color: #1F1F1F !important;');
-    expect(styleEl?.textContent).toContain('::highlight(clearread-sentence)');
+    expect(css).toContain("font-family: 'Atkinson Hyperlegible'");
+    expect(css).toContain('[role="article"] p');
+    expect(css).toContain('article div:not(:has(div, p, ul, ol, table, section, article, aside, header, footer, nav))');
+    expect(css).toContain('p span, li span, a, strong, em, b, u, small, mark, time');
+    expect(css).toMatch(/p,\s*li,\s*dd,\s*dt,\s*blockquote\s*\{\s*max-width:\s*75ch\s*!important;\s*\}/);
+    expect(css).not.toMatch(/main.*max-width/s);
+    expect(css).toContain('color: #1F1F1F !important;');
+    expect(css).toContain('::highlight(clearread-sentence)');
   });
 
   it('skips background and dark-ink override when tintColor is Clean White (#FFFFFF)', () => {

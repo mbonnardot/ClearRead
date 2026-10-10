@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <title>ClearRead Controls</title>
-  <link rel="stylesheet" href="./styles/fonts.css">
-  <link rel="stylesheet" href="./styles/m3-theme.css">
+  <link rel="stylesheet" href="/styles/fonts.css">
+  <link rel="stylesheet" href="/styles/m3-theme.css">
   <style>
     body {
       width: 280px;
@@ -62,6 +62,14 @@
     <input type="checkbox" id="enabled" aria-label="Enable ClearRead">
   </div>
   <div class="m3-field">
+    <label for="profileSelect">Reading Profile</label>
+    <select id="profileSelect">
+      <option value="mild">Subtle Clarity</option>
+      <option value="moderate">Focused Tracking</option>
+      <option value="heavy">Multi-Sensory</option>
+    </select>
+  </div>
+  <div class="m3-field">
     <label for="fontSelect">Typeface</label>
     <select id="fontSelect">
       <option value="Lexend">Lexend</option>
@@ -95,6 +103,6 @@
     </select>
   </div>
   <a class="re-onboard-link" id="resetProfilesLink" href="#onboarding">Recalibrate Profile</a>
-  <script type="module" src="./src/popup/index.ts"></script>
+  <script type="module" src="./index.ts"></script>
 </body>
 </html>

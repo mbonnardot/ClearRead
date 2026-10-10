@@ -1,18 +1,40 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { initBackground } from '../../src/background/index';
 import { initOnboarding } from '../../src/onboarding/index';
 import { initPopup } from '../../src/popup/index';
 import { DEFAULT_SETTINGS, PROFILES } from '../../src/shared/profiles';
 
-describe('Material Design 3 Onboarding & Popup UI controllers', () => {
+describe('Material Design 3 Background, Onboarding & Popup UI controllers', () => {
   let stored: Record<string, unknown>;
   let createTab: ReturnType<typeof vi.fn>;
+  let queryTabs: ReturnType<typeof vi.fn>;
+  let executeScript: ReturnType<typeof vi.fn>;
+  let installedListener: ((details: { reason: string }) => void) | undefined;
 
   beforeEach(() => {
     stored = { ...DEFAULT_SETTINGS };
     createTab = vi.fn();
+    queryTabs = vi.fn(async () => [
+      { id: 1, url: 'https://example.com/article' },
+      { id: 2, url: 'chrome://extensions' },
+      { id: 3, url: 'http://localhost:3000/page' },
+      { url: 'https://missing-id.example.com' }
+    ]);
+    executeScript = vi.fn(({ target }: { target: { tabId: number } }) =>
+      target.tabId === 3 ? Promise.reject(new Error('Tab restricted')) : Promise.resolve([])
+    );
+    installedListener = undefined;
+
     vi.stubGlobal('chrome', {
+      runtime: {
+        onInstalled: {
+          addListener: (cb: (details: { reason: string }) => void) => {
+            installedListener = cb;
+          }
+        }
+      },
       storage: {
         sync: {
           get: (_def: unknown, cb: (res: Record<string, unknown>) => void) => cb({ ...stored }),
@@ -22,12 +44,38 @@ describe('Material Design 3 Onboarding & Popup UI controllers', () => {
           }
         }
       },
-      tabs: { create: createTab }
+      tabs: {
+        create: createTab,
+        query: queryTabs
+      },
+      scripting: {
+        executeScript
+      }
     });
   });
 
-  it('switches onboarding profile preview and persists chosen preset on save', () => {
-    const html = readFileSync(resolve(process.cwd(), 'onboarding.html'), 'utf8');
+  it('injects content.js into open HTTP/HTTPS tabs on extension install and update', async () => {
+    initBackground();
+    expect(installedListener).toBeDefined();
+
+    installedListener?.({ reason: 'install' });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(createTab).toHaveBeenCalledWith({ url: 'onboarding.html' });
+    expect(executeScript).toHaveBeenCalledTimes(2);
+    expect(executeScript).toHaveBeenCalledWith({ target: { tabId: 1 }, files: ['content.js'] });
+    expect(executeScript).toHaveBeenCalledWith({ target: { tabId: 3 }, files: ['content.js'] });
+
+    createTab.mockClear();
+    executeScript.mockClear();
+
+    installedListener?.({ reason: 'update' });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(createTab).not.toHaveBeenCalled();
+    expect(executeScript).toHaveBeenCalledTimes(2);
+  });
+
+  it('switches onboarding profile preview, injects content script into open tabs, and persists preset on save', async () => {
+    const html = readFileSync(resolve(process.cwd(), 'src/onboarding/onboarding.html'), 'utf8');
     document.documentElement.innerHTML = html;
     const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => {});
 
@@ -57,67 +105,114 @@ describe('Material Design 3 Onboarding & Popup UI controllers', () => {
     expect(previewBox.style.fontFamily).toContain('OpenDyslexic');
     expect(previewBox.style.lineHeight).toBe('2');
 
-    // Non-selection keys are ignored
     mildCard.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
     expect(heavyCard.getAttribute('aria-checked')).toBe('true');
 
     const saveStatus = document.getElementById('saveStatus') as HTMLElement;
     (document.getElementById('saveBtn') as HTMLButtonElement).click();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(stored.enabled).toBe(true);
     expect(stored.font).toBe(PROFILES.heavy.font);
     expect(stored.ttsMode).toBe('click');
     expect(stored.hasSeenOnboarding).toBe(true);
     expect(saveStatus.textContent).toBe('Profile applied!');
+    expect(executeScript).toHaveBeenCalledTimes(2);
     expect(closeSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('hydrates popup controls from storage and updates settings immutably on input', async () => {
+  it('hydrates popup controls, injects open tabs, switches profiles, and auto-enables on control edits', async () => {
     stored = { ...PROFILES.moderate, hasSeenOnboarding: true };
-    const html = readFileSync(resolve(process.cwd(), 'popup.html'), 'utf8');
+    const html = readFileSync(resolve(process.cwd(), 'src/popup/popup.html'), 'utf8');
     document.documentElement.innerHTML = html;
 
     await initPopup(document);
+    expect(executeScript).toHaveBeenCalledTimes(2);
 
     const enabledCheckbox = document.getElementById('enabled') as HTMLInputElement;
+    const profileSelect = document.getElementById('profileSelect') as HTMLSelectElement;
+    const fontSelect = document.getElementById('fontSelect') as HTMLSelectElement;
+    const rulerToggle = document.getElementById('rulerToggle') as HTMLInputElement;
+    const lineHeight = document.getElementById('lineHeight') as HTMLInputElement;
+    const tintSelect = document.getElementById('tintSelect') as HTMLSelectElement;
+    const ttsSelect = document.getElementById('ttsSelect') as HTMLSelectElement;
+
+    expect(profileSelect.value).toBe('moderate');
     expect(enabledCheckbox.checked).toBe(true);
+
+    // Explicitly turn off ClearRead
     enabledCheckbox.checked = false;
     enabledCheckbox.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
     expect(stored.enabled).toBe(false);
 
-    const fontSelect = document.getElementById('fontSelect') as HTMLSelectElement;
-    expect(fontSelect.value).toBe('Atkinson Hyperlegible');
-
+    // Changing typeface auto-enables ClearRead
     fontSelect.value = 'Lexend';
     fontSelect.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
+    expect(enabledCheckbox.checked).toBe(true);
+    expect(stored.enabled).toBe(true);
     expect(stored.font).toBe('Lexend');
 
-    const rulerToggle = document.getElementById('rulerToggle') as HTMLInputElement;
-    expect(rulerToggle.checked).toBe(true);
+    // Disable again, then changing ruler auto-enables
+    enabledCheckbox.checked = false;
+    enabledCheckbox.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 0));
     rulerToggle.checked = false;
     rulerToggle.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
+    expect(enabledCheckbox.checked).toBe(true);
+    expect(stored.enabled).toBe(true);
     expect(stored.rulerEnabled).toBe(false);
 
-    const lineHeight = document.getElementById('lineHeight') as HTMLInputElement;
-    expect(lineHeight.value).toBe('1.8');
+    // Disable again, then changing line spacing auto-enables
+    enabledCheckbox.checked = false;
+    enabledCheckbox.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 0));
     lineHeight.value = '2.1';
     lineHeight.dispatchEvent(new Event('input'));
     await new Promise((r) => setTimeout(r, 0));
+    expect(enabledCheckbox.checked).toBe(true);
+    expect(stored.enabled).toBe(true);
     expect(stored.lineHeight).toBe('2.1');
 
-    const tintSelect = document.getElementById('tintSelect') as HTMLSelectElement;
-    expect(tintSelect.value).toBe('#FBF0D9');
+    // Disable again, then changing tint auto-enables
+    enabledCheckbox.checked = false;
+    enabledCheckbox.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 0));
     tintSelect.value = '#EAEFE9';
     tintSelect.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
+    expect(enabledCheckbox.checked).toBe(true);
+    expect(stored.enabled).toBe(true);
     expect(stored.tintColor).toBe('#EAEFE9');
 
-    const ttsSelect = document.getElementById('ttsSelect') as HTMLSelectElement;
+    // Disable again, then changing TTS auto-enables
+    enabledCheckbox.checked = false;
+    enabledCheckbox.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 0));
     ttsSelect.value = 'click';
     ttsSelect.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
+    expect(enabledCheckbox.checked).toBe(true);
+    expect(stored.enabled).toBe(true);
     expect(stored.ttsMode).toBe('click');
+
+    // Switching profile preset updates all inputs and saves enabled preset
+    enabledCheckbox.checked = false;
+    enabledCheckbox.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 0));
+    profileSelect.value = 'heavy';
+    profileSelect.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(enabledCheckbox.checked).toBe(true);
+    expect(fontSelect.value).toBe('OpenDyslexic');
+    expect(rulerToggle.checked).toBe(true);
+    expect(lineHeight.value).toBe('2.0');
+    expect(tintSelect.value).toBe('#FFF7E6');
+    expect(ttsSelect.value).toBe('click');
+    expect(stored.profile).toBe('heavy');
+    expect(stored.enabled).toBe(true);
 
     (document.getElementById('resetProfilesLink') as HTMLAnchorElement).click();
     expect(createTab).toHaveBeenCalledWith({ url: 'onboarding.html' });

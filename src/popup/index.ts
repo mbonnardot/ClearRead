@@ -1,8 +1,13 @@
+import { PROFILES } from '../shared/profiles';
 import { getSettings, updateSettings } from '../shared/storage';
-import type { FontFamily, TintColor, TtsMode } from '../shared/types';
+import { injectContentScriptIntoOpenTabs } from '../shared/tabInjector';
+import type { FontFamily, ProfileKey, TintColor, TtsMode } from '../shared/types';
 
 export async function initPopup(doc: Document = document): Promise<void> {
+  void injectContentScriptIntoOpenTabs();
+
   const enabledEl = doc.getElementById('enabled') as HTMLInputElement | null;
+  const profileEl = doc.getElementById('profileSelect') as HTMLSelectElement | null;
   const fontEl = doc.getElementById('fontSelect') as HTMLSelectElement | null;
   const rulerEl = doc.getElementById('rulerToggle') as HTMLInputElement | null;
   const lineHeightEl = doc.getElementById('lineHeight') as HTMLInputElement | null;
@@ -16,6 +21,9 @@ export async function initPopup(doc: Document = document): Promise<void> {
 
   const current = await getSettings();
   enabledEl.checked = current.enabled;
+  if (profileEl) {
+    profileEl.value = current.profile;
+  }
   fontEl.value = current.font;
   rulerEl.checked = current.rulerEnabled;
   lineHeightEl.value = current.lineHeight;
@@ -25,20 +33,39 @@ export async function initPopup(doc: Document = document): Promise<void> {
   enabledEl.addEventListener('change', () => {
     void updateSettings({ enabled: enabledEl.checked });
   });
+  if (profileEl) {
+    profileEl.addEventListener('change', () => {
+      const selected = profileEl.value as ProfileKey;
+      const preset = PROFILES[selected];
+      if (!preset) return;
+      enabledEl.checked = true;
+      fontEl.value = preset.font;
+      rulerEl.checked = preset.rulerEnabled;
+      lineHeightEl.value = preset.lineHeight;
+      tintEl.value = preset.tintColor;
+      ttsEl.value = preset.ttsMode;
+      void updateSettings({ ...preset, enabled: true });
+    });
+  }
   fontEl.addEventListener('change', () => {
-    void updateSettings({ font: fontEl.value as FontFamily });
+    enabledEl.checked = true;
+    void updateSettings({ font: fontEl.value as FontFamily, enabled: true });
   });
   rulerEl.addEventListener('change', () => {
-    void updateSettings({ rulerEnabled: rulerEl.checked });
+    enabledEl.checked = true;
+    void updateSettings({ rulerEnabled: rulerEl.checked, enabled: true });
   });
   lineHeightEl.addEventListener('input', () => {
-    void updateSettings({ lineHeight: lineHeightEl.value });
+    enabledEl.checked = true;
+    void updateSettings({ lineHeight: lineHeightEl.value, enabled: true });
   });
   tintEl.addEventListener('change', () => {
-    void updateSettings({ tintColor: tintEl.value as TintColor });
+    enabledEl.checked = true;
+    void updateSettings({ tintColor: tintEl.value as TintColor, enabled: true });
   });
   ttsEl.addEventListener('change', () => {
-    void updateSettings({ ttsMode: ttsEl.value as TtsMode });
+    enabledEl.checked = true;
+    void updateSettings({ ttsMode: ttsEl.value as TtsMode, enabled: true });
   });
   resetLink.addEventListener('click', (e) => {
     e.preventDefault();

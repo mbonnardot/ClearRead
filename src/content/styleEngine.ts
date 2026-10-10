@@ -74,12 +74,19 @@ export function applyStyles(settings: ClearReadSettings, doc: Document = documen
   }
 
   proseStyle.textContent = `
-    p, li, dd, dt, blockquote {
+    p, li, dd, dt, blockquote, h1, h2, h3, h4, h5, h6, td, th, figcaption, label, summary, [role="article"] p, article div:not(:has(div, p, ul, ol, table, section, article, aside, header, footer, nav)) {
       font-family: '${settings.font}', -apple-system, BlinkMacSystemFont, sans-serif !important;
       line-height: ${settings.lineHeight} !important;
       letter-spacing: ${settings.letterSpacing} !important;
       word-spacing: ${settings.wordSpacing} !important;
       text-align: left !important;
+    }
+    p span, li span, a, strong, em, b, u, small, mark, time {
+      font-family: inherit !important;
+      letter-spacing: inherit !important;
+      word-spacing: inherit !important;
+    }
+    p, li, dd, dt, blockquote {
       max-width: 75ch !important;
     }
     code, pre, kbd, samp, svg, i, [class*="icon"], [class*="fa-"] {
