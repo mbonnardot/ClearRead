@@ -28,13 +28,14 @@ export function shouldTriggerTts(event: MouseEvent, ttsMode: TtsMode): HTMLEleme
   if (ttsMode === 'off') return null;
   if (ttsMode === 'alt-click' && !event.altKey) return null;
 
-  if (!event.altKey && event.target instanceof Element) {
-    if (event.target.closest(INTERACTIVE_SELECTOR)) return null;
+  const rawTarget = event.composedPath?.()[0] ?? event.target;
+  if (!event.altKey && rawTarget instanceof Element) {
+    if (rawTarget.closest(INTERACTIVE_SELECTOR)) return null;
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) return null;
   }
 
-  return findReadableBlock(event.target);
+  return findReadableBlock(rawTarget);
 }
 
 function resolvePosition(

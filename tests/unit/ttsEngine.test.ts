@@ -155,15 +155,29 @@ describe('content ttsEngine, content orchestrator & background worker', () => {
       (changes: Record<string, chrome.storage.StorageChange>, area: string) => void
     > = [];
 
+    const messageListeners: Array<
+      (msg: unknown, sender: unknown, sendResponse: (res: unknown) => void) => void
+    > = [];
+
     vi.stubGlobal('chrome', {
       runtime: {
-        getURL: (path: string) => `chrome-extension://test-id/${path}`
+        getURL: (path: string) => `chrome-extension://test-id/${path}`,
+        onMessage: {
+          addListener: vi.fn((fn) => messageListeners.push(fn)),
+          removeListener: vi.fn((fn) => {
+            const idx = messageListeners.indexOf(fn);
+            if (idx >= 0) messageListeners.splice(idx, 1);
+          })
+        }
       },
       storage: {
         sync: {
-          get: vi.fn((defaults: Record<string, unknown>, cb: (res: Record<string, unknown>) => void) => {
-            cb({ ...defaults, ...storedSettings });
-          })
+          get: vi.fn(
+            (defaults: Record<string, unknown>, cb: (res: Record<string, unknown>) => void) => {
+              cb({ ...defaults, ...storedSettings });
+            }
+          ),
+          set: vi.fn((_items: Record<string, unknown>, cb?: () => void) => cb?.())
         },
         onChanged: {
           addListener: vi.fn((fn) => changeListeners.push(fn)),
@@ -181,6 +195,15 @@ describe('content ttsEngine, content orchestrator & background worker', () => {
     expect(document.getElementById(STYLE_EL_ID)).not.toBeNull();
     const host = document.getElementById(OVERLAY_HOST_ID)!;
     expect(host).not.toBeNull();
+
+    // Message listener toggles Reader View open and closed
+    const sendResponse = vi.fn();
+    messageListeners[0]?.({ type: 'CLEARREAD_TOGGLE_READER' }, {}, sendResponse);
+    expect(sendResponse).toHaveBeenCalledWith({ open: true });
+
+    // Alt+R toggles Reader View closed
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', altKey: true }));
+    expect(document.getElementById('clearread-reader-host')?.shadowRoot?.querySelector('dialog[open]')).toBeNull();
 
     // Alt+Click on paragraph starts TTS and prevents default action
     const p = document.getElementById('target')!;
@@ -234,5 +257,6 @@ describe('content ttsEngine, content orchestrator & background worker', () => {
     cleanup();
     expect(document.getElementById(OVERLAY_HOST_ID)).toBeNull();
     expect(changeListeners).toHaveLength(0);
+    expect(messageListeners).toHaveLength(0);
   });
 });
