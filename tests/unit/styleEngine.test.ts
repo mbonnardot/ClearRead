@@ -7,7 +7,7 @@ import {
   teardownStyles
 } from '../../src/content/styleEngine';
 
-describe('content styleEngine', () => {
+describe('content styleEngine (v2 non-destructive host styling)', () => {
   beforeEach(() => {
     document.head.innerHTML = '';
     vi.stubGlobal('chrome', {
@@ -17,29 +17,38 @@ describe('content styleEngine', () => {
     });
   });
 
-  it('injects offline @font-face declarations, broader prose/heading selectors, and leaf-only 75ch max-width', () => {
-    applyStyles({ ...PROFILES.moderate, hasSeenOnboarding: true });
+  it('never overrides host background-color or foreground color on containers even with Sepia tint', () => {
+    applyStyles({
+      ...DEFAULT_SETTINGS,
+      ...PROFILES.moderate,
+      tintColor: '#FBF0D9',
+      fontScale: 115,
+      paragraphAlternation: true,
+      hasSeenOnboarding: true
+    });
 
     const fontEl = document.getElementById(FONT_EL_ID);
     const styleEl = document.getElementById(STYLE_EL_ID);
     const css = styleEl?.textContent ?? '';
     expect(fontEl).not.toBeNull();
     expect(fontEl?.textContent).toContain('chrome-extension://test-ext/fonts/AtkinsonHyperlegible-Regular.woff2');
-    expect(styleEl).not.toBeNull();
-    expect(css).toContain("font-family: 'Atkinson Hyperlegible'");
-    expect(css).toContain('[role="article"] p');
-    expect(css).toContain('article div:not(:has(div, p, ul, ol, table, section, article, aside, header, footer, nav))');
-    expect(css).toContain('p span, li span, a, strong, em, b, u, small, mark, time');
-    expect(css).toMatch(/p,\s*li,\s*dd,\s*dt,\s*blockquote\s*\{\s*max-width:\s*75ch\s*!important;\s*\}/);
-    expect(css).not.toMatch(/main.*max-width/s);
-    expect(css).toContain('color: #1F1F1F !important;');
-    expect(css).toContain('::highlight(clearread-sentence)');
+    expect(css).toContain('font-family: "Atkinson Hyperlegible"');
+    expect(css).toContain('max-width: 75ch !important;');
+    expect(css).toContain('zoom: 1.15;');
+    expect(css).toContain('p:nth-of-type(even), li:nth-of-type(even), blockquote:nth-of-type(even)');
+    expect(css).toContain('border-left: 3px solid rgba(11, 87, 208, 0.45) !important;');
+
+    // Non-destructive guarantee: NEVER emit background-color: #FBF0D9 !important on host containers
+    expect(css).not.toContain('background-color: #FBF0D9');
+    expect(css).not.toMatch(/div:not\(\[id\^="clearread"\]\)/);
   });
 
-  it('skips background and dark-ink override when tintColor is Clean White (#FFFFFF)', () => {
-    applyStyles({ ...PROFILES.mild, hasSeenOnboarding: true });
-    const styleEl = document.getElementById(STYLE_EL_ID);
-    expect(styleEl?.textContent).not.toContain('background-color: #FFFFFF !important;');
+  it('tears down styles immediately when current domain is in excludedDomains', () => {
+    applyStyles(
+      { ...DEFAULT_SETTINGS, enabled: true, excludedDomains: ['app.internal.example'] },
+      'app.internal.example'
+    );
+    expect(document.getElementById(STYLE_EL_ID)).toBeNull();
   });
 
   it('removes prose styles cleanly on teardownStyles', () => {
@@ -51,14 +60,14 @@ describe('content styleEngine', () => {
   });
 
   it('reuses existing style nodes when updating settings and tears down when disabled', () => {
-    applyStyles({ ...PROFILES.moderate, hasSeenOnboarding: true });
+    applyStyles({ ...DEFAULT_SETTINGS, ...PROFILES.moderate, hasSeenOnboarding: true });
     const initialFontEl = document.getElementById(FONT_EL_ID);
     const initialStyleEl = document.getElementById(STYLE_EL_ID);
 
-    applyStyles({ ...PROFILES.heavy, hasSeenOnboarding: true });
+    applyStyles({ ...DEFAULT_SETTINGS, ...PROFILES.heavy, hasSeenOnboarding: true });
     expect(document.getElementById(FONT_EL_ID)).toBe(initialFontEl);
     expect(document.getElementById(STYLE_EL_ID)).toBe(initialStyleEl);
-    expect(initialStyleEl?.textContent).toContain("font-family: 'OpenDyslexic'");
+    expect(initialStyleEl?.textContent).toContain('font-family: "OpenDyslexic"');
 
     applyStyles({ ...DEFAULT_SETTINGS, enabled: false });
     expect(document.getElementById(STYLE_EL_ID)).toBeNull();

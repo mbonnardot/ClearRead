@@ -1,3 +1,5 @@
+import type { RulerStyle } from '../shared/types';
+
 export const OVERLAY_HOST_ID = 'clearread-overlay-host';
 
 export interface OverlayCallbacks {
@@ -9,10 +11,19 @@ export type TtsPillStatus = 'hidden' | 'speaking' | 'paused';
 
 export interface OverlayController {
   setTintColor(color: string | null): void;
+  setRulerConfig(enabled: boolean, style: RulerStyle): void;
   setRulerEnabled(enabled: boolean): void;
+  updatePdfBanner(isPdf: boolean, sourceUrl?: string): void;
   setTtsStatus(status: TtsPillStatus): void;
   destroy(): void;
 }
+
+const RULER_BAND_HEIGHTS: Record<RulerStyle, number> = {
+  bar: 36,
+  narrow: 40,
+  medium: 96,
+  wide: 160
+};
 
 const SHADOW_STYLES = `
   :host {
@@ -40,6 +51,45 @@ const SHADOW_STYLES = `
     z-index: 2147483646;
     display: none;
     transform: translateY(-50%);
+  }
+  #clearread-mask-top {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    background: rgba(18, 18, 22, 0.36);
+    border-bottom: 1.5px solid rgba(11, 87, 208, 0.55);
+    pointer-events: none;
+    z-index: 2147483646;
+    display: none;
+  }
+  #clearread-mask-bottom {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(18, 18, 22, 0.36);
+    border-top: 1.5px solid rgba(11, 87, 208, 0.55);
+    pointer-events: none;
+    z-index: 2147483646;
+    display: none;
+  }
+  #clearread-pdf-banner {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    z-index: 2147483647;
+    display: none;
+  }
+  .pdf-open-btn {
+    background: #0b57d0;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font: 600 13px/1 system-ui, sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+    cursor: pointer;
   }
   #clearread-tts-pill {
     position: fixed;
@@ -77,6 +127,17 @@ const SHADOW_STYLES = `
   }
 `;
 
+export function detectPdfPage(
+  doc: Document = document,
+  loc: Location = window.location
+): boolean {
+  return (
+    loc.pathname.toLowerCase().endsWith('.pdf') ||
+    doc.contentType === 'application/pdf' ||
+    Boolean(doc.querySelector('embed[type="application/pdf"]'))
+  );
+}
+
 export function createOverlayController(
   callbacks: OverlayCallbacks,
   doc: Document = document
@@ -87,8 +148,8 @@ export function createOverlayController(
   host.id = OVERLAY_HOST_ID;
   const shadow = host.attachShadow({ mode: 'open' });
 
-  const style = doc.createElement('style');
-  style.textContent = SHADOW_STYLES;
+  const styleEl = doc.createElement('style');
+  styleEl.textContent = SHADOW_STYLES;
 
   const tintLayer = doc.createElement('div');
   tintLayer.id = 'clearread-tint-layer';
@@ -96,6 +157,26 @@ export function createOverlayController(
 
   const ruler = doc.createElement('div');
   ruler.id = 'clearread-ruler';
+  ruler.style.display = 'none';
+
+  const topMask = doc.createElement('div');
+  topMask.id = 'clearread-mask-top';
+  topMask.style.display = 'none';
+
+  const bottomMask = doc.createElement('div');
+  bottomMask.id = 'clearread-mask-bottom';
+  bottomMask.style.display = 'none';
+
+  const pdfBanner = doc.createElement('div');
+  pdfBanner.id = 'clearread-pdf-banner';
+  pdfBanner.style.display = 'none';
+
+  const openPdfBtn = doc.createElement('button');
+  openPdfBtn.id = 'clearread-open-pdf-btn';
+  openPdfBtn.className = 'pdf-open-btn';
+  openPdfBtn.type = 'button';
+  openPdfBtn.textContent = '📖 Read PDF in ClearRead';
+  pdfBanner.appendChild(openPdfBtn);
 
   const pill = doc.createElement('div');
   pill.id = 'clearread-tts-pill';
@@ -127,59 +208,103 @@ export function createOverlayController(
     callbacks.onStop();
   });
 
+  let pdfTargetUrl = window.location.href;
+  openPdfBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const basePdfViewerUrl = chrome.runtime?.getURL
+      ? chrome.runtime.getURL('pdf.html')
+      : '/pdf.html';
+    const viewerUrl = `${basePdfViewerUrl}?url=${encodeURIComponent(pdfTargetUrl)}`;
+    window.location.assign(viewerUrl);
+  });
+
   pill.append(statusSpan, pauseBtn, stopBtn);
-  shadow.append(style, tintLayer, ruler, pill);
+  shadow.append(styleEl, tintLayer, ruler, topMask, bottomMask, pdfBanner, pill);
   doc.documentElement.appendChild(host);
 
   let rulerActive = false;
+  let currentStyle: RulerStyle = 'medium';
+  let currentY = Math.round(window.innerHeight * 0.4);
 
-  const onMouseMove = (e: MouseEvent) => {
-    if (!rulerActive) return;
-    window.requestAnimationFrame(() => {
-      if (!rulerActive) return;
+  function renderRulerPosition(): void {
+    if (!rulerActive) {
+      ruler.style.display = 'none';
+      topMask.style.display = 'none';
+      bottomMask.style.display = 'none';
+      return;
+    }
+
+    if (currentStyle === 'bar') {
+      topMask.style.display = 'none';
+      bottomMask.style.display = 'none';
       ruler.style.display = 'block';
-      ruler.style.top = `${e.clientY}px`;
+      ruler.style.top = `${currentY}px`;
+      return;
+    }
+
+    const bandHeight = RULER_BAND_HEIGHTS[currentStyle];
+    const halfBand = bandHeight / 2;
+    ruler.style.display = 'none';
+    topMask.style.display = 'block';
+    bottomMask.style.display = 'block';
+    topMask.style.height = `${Math.max(0, currentY - halfBand)}px`;
+    bottomMask.style.top = `${Math.max(0, currentY + halfBand)}px`;
+  }
+
+  const onMouseMove = (e: MouseEvent): void => {
+    if (!rulerActive) return;
+    currentY = e.clientY;
+    window.requestAnimationFrame(() => {
+      renderRulerPosition();
     });
   };
 
   return {
-    setTintColor(color: string | null) {
+    setTintColor(color: string | null): void {
       if (!color || color === '#FFFFFF') {
         tintLayer.style.display = 'none';
-      } else {
-        tintLayer.style.backgroundColor = color;
-        tintLayer.style.display = 'block';
+        return;
       }
+      tintLayer.style.backgroundColor = color;
+      tintLayer.style.display = 'block';
     },
 
-    setRulerEnabled(enabled: boolean) {
-      if (enabled === rulerActive) return;
+    setRulerConfig(enabled: boolean, style: RulerStyle): void {
+      const wasActive = rulerActive;
       rulerActive = enabled;
-      if (enabled) {
-        ruler.style.display = 'block';
-        ruler.style.top = `${Math.round(window.innerHeight * 0.4)}px`;
+      currentStyle = style;
+
+      if (enabled && !wasActive) {
         window.addEventListener('mousemove', onMouseMove, { passive: true });
-      } else {
+      } else if (!enabled && wasActive) {
         window.removeEventListener('mousemove', onMouseMove);
-        ruler.style.display = 'none';
       }
+
+      renderRulerPosition();
     },
 
-    setTtsStatus(status: TtsPillStatus) {
+    setRulerEnabled(enabled: boolean): void {
+      this.setRulerConfig(enabled, currentStyle);
+    },
+
+    updatePdfBanner(isPdf: boolean, sourceUrl: string = window.location.href): void {
+      pdfTargetUrl = sourceUrl;
+      pdfBanner.style.display = isPdf ? 'block' : 'none';
+    },
+
+    setTtsStatus(status: TtsPillStatus): void {
       if (status === 'hidden') {
         pill.hidden = true;
         return;
       }
       pill.hidden = false;
-      statusSpan.textContent = status === 'paused' ? 'Paused' : 'Reading…';
-      pauseBtn.textContent = status === 'paused' ? 'Resume' : 'Pause';
-      pauseBtn.setAttribute(
-        'aria-label',
-        status === 'paused' ? 'Resume reading' : 'Pause reading'
-      );
+      const isPaused = status === 'paused';
+      statusSpan.textContent = isPaused ? 'Paused' : 'Reading…';
+      pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+      pauseBtn.setAttribute('aria-label', isPaused ? 'Resume reading' : 'Pause reading');
     },
 
-    destroy() {
+    destroy(): void {
       rulerActive = false;
       window.removeEventListener('mousemove', onMouseMove);
       host.remove();

@@ -1,3 +1,4 @@
+import { isDomainExcluded } from '../shared/storage';
 import type { ClearReadSettings } from '../shared/types';
 
 export const STYLE_EL_ID = 'clearread-styles';
@@ -33,33 +34,18 @@ function buildFontFaceCss(): string {
   `;
 }
 
-function buildTintCss(tintColor: ClearReadSettings['tintColor']): string {
-  if (tintColor === '#FFFFFF') {
-    return '';
-  }
-
-  return `
-    html, body, main, article, section, div:not([id^="clearread"]) {
-      background-color: ${tintColor} !important;
-      color: #1F1F1F !important;
-    }
-    p, li, dd, dt, blockquote, h1, h2, h3, h4, h5, h6, td, th, span {
-      color: #1F1F1F !important;
-    }
-    a {
-      color: #0B57D0 !important;
-    }
-  `;
-}
-
-export function applyStyles(settings: ClearReadSettings, doc: Document = document): void {
-  if (!settings.enabled) {
+export function applyStyles(
+  settings: ClearReadSettings,
+  hostname: string = window.location.hostname,
+  doc: Document = document
+): void {
+  if (!settings.enabled || isDomainExcluded(hostname, settings.excludedDomains)) {
     teardownStyles(doc);
     return;
   }
 
   let fontStyle = doc.getElementById(FONT_EL_ID);
-  if (!fontStyle) {
+  if (fontStyle == null) {
     fontStyle = doc.createElement('style');
     fontStyle.id = FONT_EL_ID;
     fontStyle.textContent = buildFontFaceCss();
@@ -67,42 +53,47 @@ export function applyStyles(settings: ClearReadSettings, doc: Document = documen
   }
 
   let proseStyle = doc.getElementById(STYLE_EL_ID);
-  if (!proseStyle) {
+  if (proseStyle == null) {
     proseStyle = doc.createElement('style');
     proseStyle.id = STYLE_EL_ID;
     doc.head.appendChild(proseStyle);
   }
 
+  const zoomRule = settings.fontScale !== 100 ? `zoom: ${settings.fontScale / 100};` : '';
+  const alternationRule = settings.paragraphAlternation
+    ? `
+    p:nth-of-type(even), li:nth-of-type(even), blockquote:nth-of-type(even) {
+      border-left: 3px solid rgba(11, 87, 208, 0.45) !important;
+      padding-left: 10px !important;
+    }
+  `
+    : '';
+
   proseStyle.textContent = `
-    p, li, dd, dt, blockquote, h1, h2, h3, h4, h5, h6, td, th, figcaption, label, summary, [role="article"] p, article div:not(:has(div, p, ul, ol, table, section, article, aside, header, footer, nav)) {
-      font-family: '${settings.font}', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    p, p *:not(code):not(pre):not(kbd):not(samp):not(svg):not([class*="icon"]):not([class*="fa-"]), li, li *:not(code):not(pre):not(kbd):not(samp):not(svg):not([class*="icon"]):not([class*="fa-"]), dd, dt, blockquote, h1, h2, h3, h4, h5, h6, td, th {
+      font-family: "${settings.font}", -apple-system, BlinkMacSystemFont, sans-serif !important;
       line-height: ${settings.lineHeight} !important;
       letter-spacing: ${settings.letterSpacing} !important;
       word-spacing: ${settings.wordSpacing} !important;
       text-align: left !important;
     }
-    p span, li span, a, strong, em, b, u, small, mark, time {
-      font-family: inherit !important;
-      letter-spacing: inherit !important;
-      word-spacing: inherit !important;
-    }
     p, li, dd, dt, blockquote {
       max-width: 75ch !important;
+      ${zoomRule}
     }
+    ${alternationRule}
     code, pre, kbd, samp, svg, i, [class*="icon"], [class*="fa-"] {
       font-family: inherit !important;
       letter-spacing: normal !important;
       word-spacing: normal !important;
     }
     ::highlight(clearread-sentence) {
-      background-color: rgba(26, 115, 232, 0.16);
-      color: #1F1F1F;
+      background-color: rgba(255, 235, 59, 0.35);
     }
     ::highlight(clearread-word) {
-      background-color: rgba(251, 188, 4, 0.45);
-      color: #1F1F1F;
+      background-color: #ffe082;
+      color: #1f1f1f;
     }
-    ${buildTintCss(settings.tintColor)}
   `;
 }
 
