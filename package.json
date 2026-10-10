@@ -1,0 +1,26 @@
+{
+  "name": "clearread",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare-assets": "node scripts/prepare-assets.mjs",
+    "build": "npm run prepare-assets && vite build && vite build --config vite.content.config.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@fontsource/atkinson-hyperlegible": "^5.1.0",
+    "@fontsource/lexend": "^5.1.0",
+    "@fontsource/opendyslexic": "^5.1.0",
+    "@playwright/test": "^1.48.0",
+    "@types/chrome": "^0.0.278",
+    "@types/node": "^22.7.0",
+    "@vitest/coverage-v8": "^2.1.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.4"
+  }
+}
